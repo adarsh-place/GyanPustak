@@ -1,0 +1,118 @@
+.tickets-page .status-message {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.tickets-page .status-message.info {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.tickets-page .status-message.success {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.tickets-page .status-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+.tickets-page .show-history-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+  margin: 8px 0 0 0;
+  font-weight: 500;
+  transition: text-decoration 0.2s;
+  width: fit-content;
+}
+
+.tickets-page .show-history-link:hover {
+  text-decoration: underline;
+}
+
+.tickets-page .show-history-link:focus {
+  outline: none;
+}
+
+.tickets-page .timeline {
+  margin-top: 16px;
+  padding: 12px 0;
+}
+
+.tickets-page .timeline-header {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tickets-page .timeline-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.tickets-page .timeline-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  position: relative;
+}
+
+.tickets-page .timeline-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 32px;
+  width: 2px;
+  height: 16px;
+  background: #e5e7eb;
+}
+
+.tickets-page .timeline-checkpoint {
+  flex-shrink: 0;
+  padding: 4px 0;
+}
+
+.tickets-page .checkpoint-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: #10b981;
+  box-shadow: 0 0 0 2px #e0e7ff;
+}
+
+.tickets-page .timeline-item:last-child .checkpoint-dot {
+  background: #3b82f6;
+  box-shadow: 0 0 0 2px #dcfce7;
+}
+
+.tickets-page .timeline-content {
+  flex: 1;
+  padding: 2px 0;
+}
+
+.tickets-page .checkpoint-status {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1f2937;
+}
+
+.tickets-page .checkpoint-meta {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  margin-top: 2px;
+}
