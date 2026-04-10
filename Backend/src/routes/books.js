@@ -90,7 +90,7 @@ booksRouter.get(
 )
 
 booksRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const {
       id,

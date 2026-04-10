@@ -78,7 +78,7 @@ coursesRouter.get(
 )
 
 coursesRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const { id, universityId, name, year, semester, departmentIds = [], instructorIds = [], books = [] } = request.body
 

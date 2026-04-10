@@ -60,7 +60,7 @@ universitiesRouter.get(
 )
 
 universitiesRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const {
       id,

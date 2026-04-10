@@ -46,7 +46,7 @@ export const apiClient = {
     return request('/tickets')
   },
   createTicket(payload) {
-    return request('/tickets', {
+    return request('/tickets/add', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -61,7 +61,7 @@ export const apiClient = {
     return request(`/carts/${studentId}`)
   },
   addCartItem(studentId, payload) {
-    return request(`/carts/${studentId}/items`, {
+    return request(`/carts/${studentId}/items/add`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -75,7 +75,7 @@ export const apiClient = {
     return request(`/orders/${studentId}`)
   },
   createOrderFromCart(payload) {
-    return request('/orders/from-cart', {
+    return request('/orders/from-cart/add', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
@@ -86,7 +86,7 @@ export const apiClient = {
     })
   },
   createEmployee(payload) {
-    return request('/employees', {
+    return request('/employees/add', {
       method: 'POST',
       body: JSON.stringify(payload),
     })

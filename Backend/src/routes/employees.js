@@ -14,7 +14,7 @@ employeesRouter.get(
 )
 
 employeesRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const {
       id,

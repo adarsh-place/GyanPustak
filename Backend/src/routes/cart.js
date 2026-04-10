@@ -71,7 +71,7 @@ cartRouter.get(
 )
 
 cartRouter.post(
-  '/:studentId/items',
+  '/:studentId/items/add',
   asyncHandler(async (request, response) => {
     const { bookId, quantity = 1 } = request.body
     if (!bookId) {

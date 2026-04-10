@@ -48,7 +48,7 @@ ordersRouter.get(
 )
 
 ordersRouter.post(
-  '/from-cart',
+  '/from-cart/add',
   asyncHandler(async (request, response) => {
     const {
       studentId,

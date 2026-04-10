@@ -26,7 +26,7 @@ studentsRouter.get(
 )
 
 studentsRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const {
       id,

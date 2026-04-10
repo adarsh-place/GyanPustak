@@ -60,7 +60,7 @@ ticketsRouter.get(
 )
 
 ticketsRouter.post(
-  '/',
+  '/add',
   asyncHandler(async (request, response) => {
     const {
       id,
