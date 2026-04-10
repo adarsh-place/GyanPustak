@@ -5,6 +5,18 @@ import { HttpError } from '../utils/httpError.js'
 
 export const ordersRouter = Router()
 
+function resolveStudentId(request, requestedStudentId) {
+  if (request.auth?.role === 'student') {
+    if (requestedStudentId && requestedStudentId !== request.auth.userId) {
+      throw new HttpError(403, 'Students can only access their own orders')
+    }
+
+    return request.auth.userId
+  }
+
+  return requestedStudentId
+}
+
 async function buildOrder(orderRow) {
   const itemsResult = await pool.query(
     `
@@ -39,8 +51,9 @@ async function buildOrder(orderRow) {
 ordersRouter.get(
   '/:studentId',
   asyncHandler(async (request, response) => {
+    const studentId = resolveStudentId(request, request.params.studentId)
     const result = await pool.query('SELECT * FROM orders WHERE student_id = $1 ORDER BY created_at DESC', [
-      request.params.studentId,
+      studentId,
     ])
     const data = await Promise.all(result.rows.map((row) => buildOrder(row)))
     response.json({ success: true, data })
@@ -60,14 +73,16 @@ ordersRouter.post(
       status = 'new',
     } = request.body
 
-    if (!studentId || !shippingType || !creditCardNumber || !creditCardExpirationDate || !creditCardHolderName || !creditCardType) {
+    const resolvedStudentId = resolveStudentId(request, studentId)
+
+    if (!resolvedStudentId || !shippingType || !creditCardNumber || !creditCardExpirationDate || !creditCardHolderName || !creditCardType) {
       throw new HttpError(400, 'Missing required order fields')
     }
 
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      const cartResult = await client.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
+      const cartResult = await client.query('SELECT * FROM carts WHERE student_id = $1', [resolvedStudentId])
       if (cartResult.rowCount === 0) {
         throw new HttpError(404, 'Cart not found')
       }
@@ -88,7 +103,7 @@ ordersRouter.post(
         `,
         [
           orderId,
-          studentId,
+          resolvedStudentId,
           shippingType,
           creditCardNumber,
           creditCardExpirationDate,
@@ -123,15 +138,26 @@ ordersRouter.post(
 ordersRouter.patch(
   '/:orderId/cancel',
   asyncHandler(async (request, response) => {
-    const result = await pool.query(
-      `
-        UPDATE orders
-        SET status = 'canceled', updated_at = NOW()
-        WHERE id = $1 AND status <> 'shipped'
-        RETURNING *
-      `,
-      [request.params.orderId],
-    )
+    const isStudent = request.auth?.role === 'student'
+    const result = isStudent
+      ? await pool.query(
+          `
+            UPDATE orders
+            SET status = 'canceled', updated_at = NOW()
+            WHERE id = $1 AND student_id = $2 AND status <> 'shipped'
+            RETURNING *
+          `,
+          [request.params.orderId, request.auth.userId],
+        )
+      : await pool.query(
+          `
+            UPDATE orders
+            SET status = 'canceled', updated_at = NOW()
+            WHERE id = $1 AND status <> 'shipped'
+            RETURNING *
+          `,
+          [request.params.orderId],
+        )
 
     if (result.rowCount === 0) {
       throw new HttpError(404, 'Order not found or cannot be canceled')

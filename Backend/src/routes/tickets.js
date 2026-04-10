@@ -40,7 +40,19 @@ async function buildTicket(ticketRow) {
 ticketsRouter.get(
   '/',
   asyncHandler(async (request, response) => {
-    const result = await pool.query('SELECT * FROM trouble_tickets ORDER BY created_at DESC')
+    const isStudent = request.auth?.role === 'student'
+    const result = isStudent
+      ? await pool.query(
+          `
+            SELECT *
+            FROM trouble_tickets
+            WHERE created_by_type = 'student' AND created_by_id = $1
+            ORDER BY created_at DESC
+          `,
+          [request.auth.userId],
+        )
+      : await pool.query('SELECT * FROM trouble_tickets ORDER BY created_at DESC')
+
     const data = await Promise.all(result.rows.map((row) => buildTicket(row)))
     response.json({ success: true, data })
   }),
@@ -49,7 +61,18 @@ ticketsRouter.get(
 ticketsRouter.get(
   '/:id',
   asyncHandler(async (request, response) => {
-    const result = await pool.query('SELECT * FROM trouble_tickets WHERE id = $1', [request.params.id])
+    const isStudent = request.auth?.role === 'student'
+    const result = isStudent
+      ? await pool.query(
+          `
+            SELECT *
+            FROM trouble_tickets
+            WHERE id = $1 AND created_by_type = 'student' AND created_by_id = $2
+          `,
+          [request.params.id, request.auth.userId],
+        )
+      : await pool.query('SELECT * FROM trouble_tickets WHERE id = $1', [request.params.id])
+
     if (result.rowCount === 0) {
       throw new HttpError(404, 'Ticket not found')
     }
@@ -74,8 +97,16 @@ ticketsRouter.post(
       status = 'new',
     } = request.body
 
-    if (!id || !category || !createdByType || !createdById || !title || !problemDescription) {
+    if (!id || !category || !title || !problemDescription) {
       throw new HttpError(400, 'Missing required ticket fields')
+    }
+
+    const isStudent = request.auth?.role === 'student'
+    const ticketCreatedByType = isStudent ? 'student' : createdByType
+    const ticketCreatedById = isStudent ? request.auth.userId : createdById
+
+    if (!ticketCreatedByType || !ticketCreatedById) {
+      throw new HttpError(400, 'Missing required ticket creator fields')
     }
 
     const client = await pool.connect()
@@ -89,7 +120,17 @@ ticketsRouter.post(
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           RETURNING *
         `,
-        [id, category, createdByType, createdById, title, problemDescription, solutionDescription, loggedDate, status],
+        [
+          id,
+          category,
+          ticketCreatedByType,
+          ticketCreatedById,
+          title,
+          problemDescription,
+          solutionDescription,
+          loggedDate,
+          status,
+        ],
       )
 
       await client.query(
@@ -97,7 +138,7 @@ ticketsRouter.post(
           INSERT INTO ticket_status_history (ticket_id, status, changed_by_type, changed_by_id)
           VALUES ($1, $2, $3, $4)
         `,
-        [id, status, createdByType, createdById],
+        [id, status, ticketCreatedByType, ticketCreatedById],
       )
 
       await client.query('COMMIT')
@@ -124,19 +165,34 @@ ticketsRouter.patch(
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      const updateResult = await client.query(
-        `
-          UPDATE trouble_tickets
-          SET status = $2,
-              solution_description = COALESCE($3, solution_description),
-              resolved_by_employee_id = COALESCE($4, resolved_by_employee_id),
-              completion_date = CASE WHEN $2 IN ('completed', 'closed') THEN CURRENT_DATE ELSE completion_date END,
-              updated_at = NOW()
-          WHERE id = $1
-          RETURNING *
-        `,
-        [request.params.id, status, solutionDescription, resolvedByEmployeeId],
-      )
+      const isStudent = request.auth?.role === 'student'
+      const updateResult = isStudent
+        ? await client.query(
+            `
+              UPDATE trouble_tickets
+              SET status = $2,
+                  solution_description = COALESCE($3, solution_description),
+                  resolved_by_employee_id = COALESCE($4, resolved_by_employee_id),
+                  completion_date = CASE WHEN $2 IN ('completed', 'closed') THEN CURRENT_DATE ELSE completion_date END,
+                  updated_at = NOW()
+              WHERE id = $1 AND created_by_type = 'student' AND created_by_id = $5
+              RETURNING *
+            `,
+            [request.params.id, status, solutionDescription, resolvedByEmployeeId, request.auth.userId],
+          )
+        : await client.query(
+            `
+              UPDATE trouble_tickets
+              SET status = $2,
+                  solution_description = COALESCE($3, solution_description),
+                  resolved_by_employee_id = COALESCE($4, resolved_by_employee_id),
+                  completion_date = CASE WHEN $2 IN ('completed', 'closed') THEN CURRENT_DATE ELSE completion_date END,
+                  updated_at = NOW()
+              WHERE id = $1
+              RETURNING *
+            `,
+            [request.params.id, status, solutionDescription, resolvedByEmployeeId],
+          )
 
       if (updateResult.rowCount === 0) {
         throw new HttpError(404, 'Ticket not found')

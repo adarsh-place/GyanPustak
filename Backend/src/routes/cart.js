@@ -5,6 +5,18 @@ import { HttpError } from '../utils/httpError.js'
 
 export const cartRouter = Router()
 
+function resolveStudentId(request, requestedStudentId) {
+  if (request.auth?.role === 'student') {
+    if (requestedStudentId && requestedStudentId !== request.auth.userId) {
+      throw new HttpError(403, 'Students can only access their own cart')
+    }
+
+    return request.auth.userId
+  }
+
+  return requestedStudentId
+}
+
 async function ensureCart(client, studentId) {
   const cartResult = await client.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
   if (cartResult.rowCount > 0) {
@@ -50,13 +62,15 @@ async function buildCart(cartRow) {
 cartRouter.get(
   '/:studentId',
   asyncHandler(async (request, response) => {
-    const result = await pool.query('SELECT * FROM carts WHERE student_id = $1', [request.params.studentId])
+    const studentId = resolveStudentId(request, request.params.studentId)
+    const result = await pool.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
+
     if (result.rowCount === 0) {
       response.json({
         success: true,
         data: {
           id: null,
-          studentId: request.params.studentId,
+          studentId,
           createdAt: null,
           updatedAt: null,
           items: [],
@@ -73,6 +87,7 @@ cartRouter.get(
 cartRouter.post(
   '/:studentId/items/add',
   asyncHandler(async (request, response) => {
+    const studentId = resolveStudentId(request, request.params.studentId)
     const { bookId, quantity = 1 } = request.body
     if (!bookId) {
       throw new HttpError(400, 'bookId is required')
@@ -81,7 +96,7 @@ cartRouter.post(
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      const cart = await ensureCart(client, request.params.studentId)
+      const cart = await ensureCart(client, studentId)
       await client.query(
         `
           INSERT INTO cart_items (cart_id, book_id, quantity)
@@ -108,7 +123,8 @@ cartRouter.post(
 cartRouter.delete(
   '/:studentId/items/:bookId',
   asyncHandler(async (request, response) => {
-    const cartResult = await pool.query('SELECT * FROM carts WHERE student_id = $1', [request.params.studentId])
+    const studentId = resolveStudentId(request, request.params.studentId)
+    const cartResult = await pool.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
     if (cartResult.rowCount === 0) {
       throw new HttpError(404, 'Cart not found')
     }

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS students (
   major_field_of_study TEXT NOT NULL,
   student_status TEXT NOT NULL CHECK (student_status IN ('undergraduate', 'graduate')),
   year_of_study TEXT NOT NULL,
+  password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -27,6 +28,7 @@ CREATE TABLE IF NOT EXISTS employees (
   address TEXT,
   telephone_number TEXT,
   role TEXT NOT NULL CHECK (role IN ('support', 'admin', 'superadmin')),
+  password_hash TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

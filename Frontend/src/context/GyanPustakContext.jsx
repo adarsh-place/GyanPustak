@@ -3,6 +3,20 @@ import { apiClient } from '../api/client'
 
 const GyanPustakContext = createContext(null)
 
+function readCookieValue(name) {
+  const encodedName = `${encodeURIComponent(name)}=`
+  const cookies = document.cookie.split(';')
+
+  for (const cookie of cookies) {
+    const trimmedCookie = cookie.trim()
+    if (trimmedCookie.startsWith(encodedName)) {
+      return decodeURIComponent(trimmedCookie.slice(encodedName.length))
+    }
+  }
+
+  return ''
+}
+
 function toDisplayDate(value) {
   if (!value) {
     return ''
@@ -154,7 +168,8 @@ function getErrorMessage(error) {
 }
 
 export function GyanPustakProvider({ children }) {
-  const [activeRole, setActiveRole] = useState('student')
+  const [activeRole, setActiveRole] = useState(() => readCookieValue('auth_role') || 'student')
+  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(readCookieValue('auth_role')))
   const [books, setBooks] = useState([])
   const [universities, setUniversities] = useState([])
   const [courses, setCourses] = useState([])
@@ -163,8 +178,9 @@ export function GyanPustakProvider({ children }) {
   const [tickets, setTickets] = useState([])
   const [cart, setCart] = useState({ id: '', studentId: '', createdAt: '', updatedAt: '', items: [] })
   const [orders, setOrders] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [isCheckingAuth] = useState(false)
 
   const primaryStudent = students[0] || {
     id: 'S1001',
@@ -220,8 +236,30 @@ export function GyanPustakProvider({ children }) {
   }, [primaryStudent.id])
 
   useEffect(() => {
+    if (!isAuthenticated) {
+      setIsLoading(false)
+      return
+    }
+
     loadData()
-  }, [loadData])
+  }, [isAuthenticated, loadData])
+
+  const loginAsRole = useCallback(async (credentials) => {
+    const response = await apiClient.login(credentials)
+    setActiveRole(response?.data?.role || credentials.role)
+    setIsAuthenticated(true)
+  }, [])
+
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.logout()
+    } catch (error) {
+      console.error('Logout failed:', error)
+    } finally {
+      setIsAuthenticated(false)
+      setActiveRole('student')
+    }
+  }, [])
 
   const cartBooks = useMemo(() => cart.items, [cart.items])
   const currentStudentId = primaryStudent.id
@@ -247,8 +285,10 @@ export function GyanPustakProvider({ children }) {
   }, [])
 
   const value = {
+    isAuthenticated,
     activeRole,
-    setActiveRole,
+    loginAsRole,
+    logout,
     student: primaryStudent,
     books,
     universities,
@@ -259,6 +299,7 @@ export function GyanPustakProvider({ children }) {
     orders,
     employees,
     isLoading,
+    isCheckingAuth,
     error,
     reloadTickets,
     reloadEmployees,

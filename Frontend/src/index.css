@@ -56,6 +56,27 @@ p {
   min-width: 220px;
 }
 
+.role-pill-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.role-pill-label {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.role-pill-value {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .nav-links {
   display: flex;
   flex-wrap: wrap;
@@ -80,6 +101,12 @@ p {
 
 .page-content {
   display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.page-content > * {
+  width: 100%;
 }
 
 .section-stack {

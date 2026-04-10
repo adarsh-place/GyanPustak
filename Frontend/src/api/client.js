@@ -26,6 +26,17 @@ async function request(path, options = {}) {
 }
 
 export const apiClient = {
+  login(payload) {
+    return request('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  logout() {
+    return request('/auth/logout', {
+      method: 'POST',
+    })
+  },
   getBooks(search) {
     const query = search ? `?search=${encodeURIComponent(search)}` : ''
     return request(`/books${query}`)

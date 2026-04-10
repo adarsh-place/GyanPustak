@@ -1,13 +1,13 @@
-INSERT INTO students (id, first_name, last_name, email, address, phone_number, date_of_birth, university_affiliation, major_field_of_study, student_status, year_of_study)
+INSERT INTO students (id, first_name, last_name, email, address, phone_number, date_of_birth, university_affiliation, major_field_of_study, student_status, year_of_study, password_hash)
 VALUES
-  ('S1001', 'Aarav', 'Sharma', 'aarav@college.edu', 'Delhi', '9000000001', '2003-05-14', 'National Tech University', 'Computer Science', 'undergraduate', '3rd Year')
+  ('S1001', 'Aarav', 'Sharma', 'aarav@college.edu', 'Delhi', '9000000001', '2003-05-14', 'National Tech University', 'Computer Science', 'undergraduate', '3rd Year', '$2a$10$placeholder')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO employees (id, first_name, last_name, gender, salary, aadhaar_number, email, address, telephone_number, role)
+INSERT INTO employees (id, first_name, last_name, gender, salary, aadhaar_number, email, address, telephone_number, role, password_hash)
 VALUES
-  ('E3001', 'Neha', 'Mishra', 'Female', 45000, '1111-2222-3333', 'neha.support@gyanpustak.com', 'Delhi', '9876543210', 'support'),
-  ('E4001', 'Vikas', 'Rao', 'Male', 78000, '4444-5555-6666', 'vikas.admin@gyanpustak.com', 'Delhi', '9988776655', 'admin'),
-  ('E5001', 'Asha', 'Kapoor', 'Female', 98000, '7777-8888-9999', 'asha.superadmin@gyanpustak.com', 'Delhi', '9012345678', 'superadmin')
+  ('E3001', 'Neha', 'Mishra', 'Female', 45000, '1111-2222-3333', 'neha.support@gyanpustak.com', 'Delhi', '9876543210', 'support', '$2a$10$placeholder'),
+  ('E4001', 'Vikas', 'Rao', 'Male', 78000, '4444-5555-6666', 'vikas.admin@gyanpustak.com', 'Delhi', '9988776655', 'admin', '$2a$10$placeholder'),
+  ('E5001', 'Asha', 'Kapoor', 'Female', 98000, '7777-8888-9999', 'asha.superadmin@gyanpustak.com', 'Delhi', '9012345678', 'superadmin', '$2a$10$placeholder')
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO universities (id, name, address, representative_first_name, representative_last_name, representative_email, representative_phone)
