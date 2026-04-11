@@ -11,11 +11,7 @@ const seedPath = join(projectRoot, 'db', 'seed.sql')
 
 function shouldSeedDatabase() {
   const value = process.env.DB_AUTO_SEED
-  if (value === undefined) {
-    return process.env.NODE_ENV !== 'production'
-  }
-
-  return value.toLowerCase() === 'true'
+  return typeof value === 'string' && value.toLowerCase() === 'true'
 }
 
 async function hashPlaceholderPasswords() {
@@ -37,6 +33,11 @@ async function hashPlaceholderPasswords() {
 }
 
 export async function initializeDatabase() {
+  if (!shouldSeedDatabase()) {
+    console.log('Skipping DB reset/seed. Set DB_AUTO_SEED=true to reinitialize database.')
+    return
+  }
+
   // Drop existing tables first to handle schema updates
   try {
     await pool.query(`
@@ -61,10 +62,7 @@ export async function initializeDatabase() {
 
   const schemaSql = await readFile(schemaPath, 'utf8')
   await pool.query(schemaSql)
-
-  if (shouldSeedDatabase()) {
-    const seedSql = await readFile(seedPath, 'utf8')
-    await pool.query(seedSql)
-    await hashPlaceholderPasswords()
-  }
+  const seedSql = await readFile(seedPath, 'utf8')
+  await pool.query(seedSql)
+  await hashPlaceholderPasswords()
 }

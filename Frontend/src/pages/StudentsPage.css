@@ -1,0 +1,66 @@
+.students-page {
+  width: 100%;
+}
+
+.students-page h3 {
+  font-size: 18px;
+  color: #1e293b;
+  margin-bottom: 12px;
+  margin-top: 20px;
+}
+
+.students-page h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #0f172a;
+}
+
+.students-page p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.students-page .form {
+  gap: 12px;
+  max-width: 600px;
+}
+
+.students-page .input {
+  width: 100%;
+}
+
+.students-page .stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.students-page .card {
+  padding: 16px;
+}
+
+.students-page .status-message {
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.students-page .status-message.error {
+  border: 1px solid #fca5a5;
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.students-page .status-message.success {
+  border: 1px solid #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.students-page .status-message.info {
+  border: 1px solid #bfdbfe;
+  background: #dbeafe;
+  color: #1d4ed8;
+}

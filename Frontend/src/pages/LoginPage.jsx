@@ -8,19 +8,22 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [selectedRole, setSelectedRole] = useState('student')
   const [errorMessage, setErrorMessage] = useState('')
-  const { loginAsRole, isLoading } = useGyanPustak()
+  const { loginAsRole, isLoading, setIsLoading } = useGyanPustak()
 
   const handleSubmit = async (event) => {
     event.preventDefault()
     setErrorMessage('')
+    setIsLoading(true)
 
     if (!email.trim()) {
       setErrorMessage('Email is required')
+      setIsLoading(false)
       return
     }
 
     if (!password.trim()) {
       setErrorMessage('Password is required')
+      setIsLoading(false)
       return
     }
 
@@ -29,6 +32,7 @@ function LoginPage() {
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : 'Login failed')
     }
+    setIsLoading(false)
   }
 
   return (

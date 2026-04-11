@@ -1,12 +1,14 @@
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { roles } from './data/mockData'
 import { GyanPustakProvider, useGyanPustak } from './context/GyanPustakContext'
+import LoadingBlock from './components/LoadingBlock'
 import BooksPage from './pages/BooksPage'
 import CartPage from './pages/CartPage'
 import DashboardPage from './pages/DashboardPage'
 import EmployeesPage from './pages/EmployeesPage'
 import LoginPage from './pages/LoginPage'
 import OrdersPage from './pages/OrdersPage'
+import StudentsPage from './pages/StudentsPage'
 import TicketsPage from './pages/TicketsPage'
 import UniversitiesPage from './pages/UniversitiesPage'
 
@@ -17,6 +19,7 @@ const visibleNavLinks = [
   { to: '/tickets', label: 'Tickets' },
   { to: '/cart', label: 'Cart', studentOnly: true },
   { to: '/orders', label: 'Orders', studentOnly: true },
+  { to: '/students', label: 'Students', adminOnly: true },
   { to: '/employees', label: 'Employees' },
 ]
 
@@ -39,7 +42,11 @@ function AppContent() {
   } = useGyanPustak()
 
   const roleLabel = roles.find((role) => role.id === activeRole)?.label || activeRole
-  const allowedNavLinks = visibleNavLinks.filter((link) => !link.studentOnly || activeRole === 'student')
+  const allowedNavLinks = visibleNavLinks.filter((link) => {
+    if (link.studentOnly && activeRole !== 'student') return false
+    if (link.adminOnly && activeRole !== 'admin' && activeRole !== 'superadmin') return false
+    return true
+  })
 
   if (isCheckingAuth) {
     return (
@@ -102,7 +109,7 @@ function AppContent() {
             ) : isLoading ? (
               <Route
                 path="*"
-                element={<article className="card">Loading GyanPustak data from the backend...</article>}
+                element={<LoadingBlock message="Loading Data..." />}
               />
             ) : (
               <>
@@ -117,6 +124,16 @@ function AppContent() {
                 <Route
                   path="/orders"
                   element={activeRole === 'student' ? <OrdersPage /> : <Navigate to="/" replace />}
+                />
+                <Route
+                  path="/students"
+                  element={
+                    activeRole === 'admin' || activeRole === 'superadmin' ? (
+                      <StudentsPage />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  }
                 />
                 <Route path="/employees" element={<EmployeesPage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />

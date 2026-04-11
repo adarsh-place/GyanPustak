@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const ordersRouter = Router()
 
@@ -49,12 +50,13 @@ async function buildOrder(orderRow) {
 }
 
 ordersRouter.get(
-  '/:studentId',
+  '/',
   asyncHandler(async (request, response) => {
-    const studentId = resolveStudentId(request, request.params.studentId)
-    const result = await pool.query('SELECT * FROM orders WHERE student_id = $1 ORDER BY created_at DESC', [
-      studentId,
-    ])
+    const isStudent = request.auth?.role === 'student'
+    const result = isStudent
+      ? await pool.query('SELECT * FROM orders WHERE student_id = $1 ORDER BY created_at DESC', [request.auth.userId])
+      : await pool.query('SELECT * FROM orders ORDER BY created_at DESC')
+
     const data = await Promise.all(result.rows.map((row) => buildOrder(row)))
     response.json({ success: true, data })
   }),
@@ -62,6 +64,7 @@ ordersRouter.get(
 
 ordersRouter.post(
   '/from-cart/add',
+  requireRoles(['student']),
   asyncHandler(async (request, response) => {
     const {
       studentId,
@@ -77,6 +80,9 @@ ordersRouter.post(
 
     if (!resolvedStudentId || !shippingType || !creditCardNumber || !creditCardExpirationDate || !creditCardHolderName || !creditCardType) {
       throw new HttpError(400, 'Missing required order fields')
+    }
+    if(resolvedStudentId != request.auth?.userId){
+      throw new HttpError(400, 'Wrong Student Id Sent')
     }
 
     const client = await pool.connect()
@@ -137,6 +143,7 @@ ordersRouter.post(
 
 ordersRouter.patch(
   '/:orderId/cancel',
+  requireRoles(['student']),
   asyncHandler(async (request, response) => {
     const isStudent = request.auth?.role === 'student'
     const result = isStudent

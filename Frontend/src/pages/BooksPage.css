@@ -22,3 +22,15 @@
   color: #991b1b;
   border-color: #fca5a5;
 }
+
+.books-page .books-form-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .books-page .books-form-row {
+    grid-template-columns: 1fr;
+  }
+}

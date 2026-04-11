@@ -24,8 +24,10 @@ function EmployeesPage() {
   }
 
   const isValidPhone = (phone) => {
-    const phoneRegex = /^(\+91)?[6-9]\d{9}$/
-    return phoneRegex.test(phone.replace(/[\s-]/g, ''))
+    const cleaned = phone.replace(/[\s-]/g, '')
+    const plusFormat = /^\+91\d{10}$/
+    const plainFormat = /^\d{10}$/
+    return plusFormat.test(cleaned) || plainFormat.test(cleaned)
   }
 
   const isValidAadhaar = (aadhaar) => {
@@ -73,7 +75,7 @@ function EmployeesPage() {
     }
 
     if (!isValidPhone(formState.phone.trim())) {
-      setActionMessage('Invalid phone format (10 digits or +91XXXXXXXXXX)')
+      setActionMessage('Invalid phone format (10 digits or +91 followed by 10 digits)')
       setActionType('error')
       return
     }
@@ -174,7 +176,7 @@ function EmployeesPage() {
           />
           <input
             className="input"
-            placeholder="Phone number (10 digits or +91XXXXXXXXXX)"
+            placeholder="Phone number (10 digits or +91 followed by 10 digits)"
             value={formState.phone}
             onChange={(event) =>
               setFormState((previous) => ({

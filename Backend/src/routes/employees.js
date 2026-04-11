@@ -1,7 +1,9 @@
 import { Router } from 'express'
+import bcrypt from 'bcryptjs'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const employeesRouter = Router()
 
@@ -15,6 +17,7 @@ employeesRouter.get(
 
 employeesRouter.post(
   '/add',
+  requireRoles(['superadmin']),
   asyncHandler(async (request, response) => {
     const {
       id,
@@ -37,15 +40,18 @@ employeesRouter.post(
       throw new HttpError(400, 'Invalid employee role')
     }
 
+    const defaultPassword = 'password123'
+    const passwordHash = await bcrypt.hash(defaultPassword, 10)
+
     const result = await pool.query(
       `
         INSERT INTO employees (
           id, first_name, last_name, gender, salary, aadhaar_number,
-          email, address, telephone_number, role
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          email, address, telephone_number, role, password_hash
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `,
-      [id, firstName, lastName, gender, salary, aadhaarNumber, email, address, telephoneNumber, role],
+      [id, firstName, lastName, gender, salary, aadhaarNumber, email, address, telephoneNumber, role, passwordHash],
     )
 
     response.status(201).json({ success: true, data: result.rows[0] })

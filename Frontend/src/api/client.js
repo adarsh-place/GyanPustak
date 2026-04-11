@@ -37,9 +37,14 @@ export const apiClient = {
       method: 'POST',
     })
   },
-  getBooks(search) {
-    const query = search ? `?search=${encodeURIComponent(search)}` : ''
-    return request(`/books${query}`)
+  getBooks() {
+    return request(`/books`)
+  },
+  createBook(payload) {
+    return request('/books/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
   getUniversities() {
     return request('/universities')
@@ -68,22 +73,22 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
-  getCart(studentId) {
-    return request(`/carts/${studentId}`)
+  getCart() {
+    return request(`/carts`)
   },
-  addCartItem(studentId, payload) {
-    return request(`/carts/${studentId}/items/add`, {
+  addCartItem(payload) {
+    return request(`/carts/items/add`, {
       method: 'POST',
       body: JSON.stringify(payload),
     })
   },
-  removeCartItem(studentId, bookId) {
-    return request(`/carts/${studentId}/items/${bookId}`, {
+  removeCartItem(bookId) {
+    return request(`/carts/items/${bookId}`, {
       method: 'DELETE',
     })
   },
-  getOrders(studentId) {
-    return request(`/orders/${studentId}`)
+  getOrders() {
+    return request('/orders')
   },
   createOrderFromCart(payload) {
     return request('/orders/from-cart/add', {
@@ -98,6 +103,12 @@ export const apiClient = {
   },
   createEmployee(payload) {
     return request('/employees/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  createStudent(payload) {
+    return request('/students/add', {
       method: 'POST',
       body: JSON.stringify(payload),
     })

@@ -58,30 +58,6 @@ ticketsRouter.get(
   }),
 )
 
-ticketsRouter.get(
-  '/:id',
-  asyncHandler(async (request, response) => {
-    const isStudent = request.auth?.role === 'student'
-    const result = isStudent
-      ? await pool.query(
-          `
-            SELECT *
-            FROM trouble_tickets
-            WHERE id = $1 AND created_by_type = 'student' AND created_by_id = $2
-          `,
-          [request.params.id, request.auth.userId],
-        )
-      : await pool.query('SELECT * FROM trouble_tickets WHERE id = $1', [request.params.id])
-
-    if (result.rowCount === 0) {
-      throw new HttpError(404, 'Ticket not found')
-    }
-
-    const [ticket] = await Promise.all(result.rows.map((row) => buildTicket(row)))
-    response.json({ success: true, data: ticket })
-  }),
-)
-
 ticketsRouter.post(
   '/add',
   asyncHandler(async (request, response) => {

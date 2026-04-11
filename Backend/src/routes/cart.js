@@ -2,20 +2,11 @@ import { Router } from 'express'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const cartRouter = Router()
 
-function resolveStudentId(request, requestedStudentId) {
-  if (request.auth?.role === 'student') {
-    if (requestedStudentId && requestedStudentId !== request.auth.userId) {
-      throw new HttpError(403, 'Students can only access their own cart')
-    }
-
-    return request.auth.userId
-  }
-
-  return requestedStudentId
-}
+cartRouter.use(requireRoles(['student']))
 
 async function ensureCart(client, studentId) {
   const cartResult = await client.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
@@ -60,9 +51,9 @@ async function buildCart(cartRow) {
 }
 
 cartRouter.get(
-  '/:studentId',
+  '/',
   asyncHandler(async (request, response) => {
-    const studentId = resolveStudentId(request, request.params.studentId)
+    const studentId = request.auth.userId;
     const result = await pool.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
 
     if (result.rowCount === 0) {
@@ -85,9 +76,9 @@ cartRouter.get(
 )
 
 cartRouter.post(
-  '/:studentId/items/add',
+  '/items/add',
   asyncHandler(async (request, response) => {
-    const studentId = resolveStudentId(request, request.params.studentId)
+    const studentId = request.auth.userId;
     const { bookId, quantity = 1 } = request.body
     if (!bookId) {
       throw new HttpError(400, 'bookId is required')
@@ -121,9 +112,9 @@ cartRouter.post(
 )
 
 cartRouter.delete(
-  '/:studentId/items/:bookId',
+  '/items/:bookId',
   asyncHandler(async (request, response) => {
-    const studentId = resolveStudentId(request, request.params.studentId)
+    const studentId = request.auth.userId;
     const cartResult = await pool.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
     if (cartResult.rowCount === 0) {
       throw new HttpError(404, 'Cart not found')

@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const coursesRouter = Router()
 
@@ -79,6 +80,7 @@ coursesRouter.get(
 
 coursesRouter.post(
   '/add',
+  requireRoles(['admin','superadmin']),
   asyncHandler(async (request, response) => {
     const { id, universityId, name, year, semester, departmentIds = [], instructorIds = [], books = [] } = request.body
 

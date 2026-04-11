@@ -16,8 +16,8 @@ function CartPage() {
     setIsActionLoading(true)
 
     try {
-      await apiClient.removeCartItem(student.id, bookId)
-      await reloadCart(student.id)
+      await apiClient.removeCartItem(bookId)
+      await reloadCart()
       setActionMessage('Item removed successfully')
       setActionType('success')
     } catch (error) {
@@ -48,7 +48,7 @@ function CartPage() {
         creditCardType: 'Visa',
         status: 'new',
       })
-      await Promise.all([reloadCart(student.id), reloadOrders(student.id)])
+      await Promise.all([reloadCart(), reloadOrders()])
       setActionMessage('Order placed successfully')
       setActionType('success')
     } catch (error) {

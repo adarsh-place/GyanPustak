@@ -7,6 +7,9 @@ body {
   font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   background: #f7f8fb;
   color: #1e293b;
+  background:
+    radial-gradient(circle at center, rgba(29, 78, 216, 0.14), transparent 34%),
+    linear-gradient(180deg, #e2edff 0%, #eef7fe 55%, #f8fafc 100%);
 }
 
 #root {

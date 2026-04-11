@@ -220,20 +220,24 @@ export function GyanPustakProvider({ children }) {
       setEmployees((employeesResponse.data || []).map(mapEmployee))
       setTickets((ticketsResponse.data || []).map(mapTicket))
 
-      const currentStudentId = (studentsResponse.data || [])[0]?.id || primaryStudent.id
-      const [cartResponse, ordersResponse] = await Promise.all([
-        apiClient.getCart(currentStudentId),
-        apiClient.getOrders(currentStudentId),
-      ])
+      if (activeRole === 'student') {
+        const [cartResponse, ordersResponse] = await Promise.all([
+          apiClient.getCart(),
+          apiClient.getOrders(),
+        ])
 
-      setCart(mapCart(cartResponse.data || { items: [] }))
-      setOrders((ordersResponse.data || []).map(mapOrder))
+        setCart(mapCart(cartResponse.data || { items: [] }))
+        setOrders((ordersResponse.data || []).map(mapOrder))
+      } else {
+        setCart(mapCart({ items: [] }))
+        setOrders([])
+      }
     } catch (fetchError) {
       setError(getErrorMessage(fetchError))
     } finally {
       setIsLoading(false)
     }
-  }, [primaryStudent.id])
+  }, [activeRole])
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -262,7 +266,10 @@ export function GyanPustakProvider({ children }) {
   }, [])
 
   const cartBooks = useMemo(() => cart.items, [cart.items])
-  const currentStudentId = primaryStudent.id
+  const reloadBooks = useCallback(async () => {
+    const booksResponse = await apiClient.getBooks()
+    setBooks((booksResponse.data || []).map(mapBook))
+  }, [])
 
   const reloadTickets = useCallback(async () => {
     const ticketsResponse = await apiClient.getTickets()
@@ -274,14 +281,29 @@ export function GyanPustakProvider({ children }) {
     setEmployees((employeesResponse.data || []).map(mapEmployee))
   }, [])
 
-  const reloadCart = useCallback(async (studentId = currentStudentId) => {
-    const cartResponse = await apiClient.getCart(studentId)
-    setCart(mapCart(cartResponse.data || { items: [] }))
-  }, [currentStudentId])
+  const reloadCart = useCallback(async () => {
+    if (activeRole !== 'student') {
+      setCart(mapCart({ items: [] }))
+      return
+    }
 
-  const reloadOrders = useCallback(async (studentId = currentStudentId) => {
-    const ordersResponse = await apiClient.getOrders(studentId)
+    const cartResponse = await apiClient.getCart()
+    setCart(mapCart(cartResponse.data || { items: [] }))
+  }, [activeRole])
+
+  const reloadOrders = useCallback(async () => {
+    if (activeRole !== 'student') {
+      setOrders([])
+      return
+    }
+
+    const ordersResponse = await apiClient.getOrders()
     setOrders((ordersResponse.data || []).map(mapOrder))
+  }, [activeRole])
+
+  const reloadStudents = useCallback(async () => {
+    const studentsResponse = await apiClient.getStudents()
+    setStudents((studentsResponse.data || []).map(mapStudent))
   }, [])
 
   const value = {
@@ -293,15 +315,19 @@ export function GyanPustakProvider({ children }) {
     books,
     universities,
     courses,
+    students,
     tickets,
     cart,
     cartBooks,
     orders,
     employees,
+    setIsLoading,
     isLoading,
     isCheckingAuth,
     error,
+    reloadBooks,
     reloadTickets,
+    reloadStudents,
     reloadEmployees,
     reloadCart,
     reloadOrders,

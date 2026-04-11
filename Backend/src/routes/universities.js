@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const universitiesRouter = Router()
 
@@ -61,6 +62,7 @@ universitiesRouter.get(
 
 universitiesRouter.post(
   '/add',
+  requireRoles(['admin','superadmin']),
   asyncHandler(async (request, response) => {
     const {
       id,

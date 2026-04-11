@@ -2,6 +2,7 @@ import { Router } from 'express'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { requireRoles } from '../middleware/authGuard.js'
 
 export const booksRouter = Router()
 
@@ -57,19 +58,8 @@ async function enrichBooks(rows) {
 booksRouter.get(
   '/',
   asyncHandler(async (request, response) => {
-    const { search } = request.query
-
-    const queryText = search
-      ? `
-          SELECT *
-          FROM books
-          WHERE title ILIKE $1 OR isbn ILIKE $1 OR category ILIKE $1
-          ORDER BY title ASC
-        `
-      : 'SELECT * FROM books ORDER BY title ASC'
-
-    const params = search ? [`%${search}%`] : []
-    const result = await pool.query(queryText, params)
+    const queryText = 'SELECT * FROM books ORDER BY title ASC'
+    const result = await pool.query(queryText)
     const data = await enrichBooks(result.rows)
 
     response.json({ success: true, data })
@@ -91,6 +81,7 @@ booksRouter.get(
 
 booksRouter.post(
   '/add',
+  requireRoles(['admin', 'superadmin']),
   asyncHandler(async (request, response) => {
     const {
       id,
