@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { apiClient } from '../api/client'
 import { useGyanPustak } from '../context/GyanPustakContext'
 import './EmployeesPage.css'
@@ -17,6 +17,15 @@ function EmployeesPage() {
   const [actionMessage, setActionMessage] = useState('')
   const [actionType, setActionType] = useState('info')
   const [isActionLoading, setIsActionLoading] = useState(false)
+  const [roleFilter, setRoleFilter] = useState('all')
+
+  const filteredEmployees = useMemo(() => {
+    if (roleFilter === 'all') {
+      return employees
+    }
+
+    return employees.filter((employee) => employee.role === roleFilter)
+  }, [employees, roleFilter])
 
   const isValidEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -136,101 +145,114 @@ function EmployeesPage() {
 
   return (
     <section className="section-stack employees-page">
-      <h2>Employee Management</h2>
 
       {activeRole === "superadmin" ? (
-        <form className="card form" onSubmit={submitEmployee}>
-          <h3>Add Customer Support/Admin Employee</h3>
-          <input
-            className="input"
-            placeholder="First name"
-            value={formState.firstName}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                firstName: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="input"
-            placeholder="Last name"
-            value={formState.lastName}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                lastName: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="input"
-            placeholder="Email"
-            value={formState.email}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                email: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="input"
-            placeholder="Phone number (10 digits or +91 followed by 10 digits)"
-            value={formState.phone}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                phone: event.target.value,
-              }))
-            }
-          />
-          <input
-            className="input"
-            placeholder="Aadhaar number (12 digits)"
-            value={formState.aadhaar}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                aadhaar: event.target.value,
-              }))
-            }
-          />
-          <select
-            className="input"
-            value={formState.role}
-            onChange={(event) =>
-              setFormState((previous) => ({
-                ...previous,
-                role: event.target.value,
-              }))
-            }
-          >
-            <option value="support">Customer Support</option>
-            <option value="admin">Administrator</option>
-          </select>
-          {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
+        <>
+          <h2>Employee Management</h2>
+          <form className="card form" onSubmit={submitEmployee}>
+            <h3>Add Employee</h3>
+            <input
+              className="input"
+              placeholder="First name"
+              value={formState.firstName}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  firstName: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Last name"
+              value={formState.lastName}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  lastName: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Email"
+              value={formState.email}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  email: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Phone number (10 digits or +91 followed by 10 digits)"
+              value={formState.phone}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  phone: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Aadhaar number (12 digits)"
+              value={formState.aadhaar}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  aadhaar: event.target.value,
+                }))
+              }
+            />
+            <select
+              className="input"
+              value={formState.role}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  role: event.target.value,
+                }))
+              }
+            >
+              <option value="support">Customer Support</option>
+              <option value="admin">Administrator</option>
+            </select>
+            {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
 
-          <button className="button" type="submit" disabled={isActionLoading}>
-            {isActionLoading ? "Working..." : "Add Employee"}
-          </button>
-        </form>
+            <button className="button" type="submit" disabled={isActionLoading}>
+              {isActionLoading ? "Working..." : "Add Employee"}
+            </button>
+          </form>
+        </>
       ) : (
-        <article className="card">
-          <p>
-            Only the super administrator can add new support and admin
-            employees.
-          </p>
-        </article>
+          <h2>Employees</h2>
       )}
 
+      <article className="card form">
+        <h3>Filter Employees</h3>
+        <select
+          className="input"
+          value={roleFilter}
+          onChange={(event) => setRoleFilter(event.target.value)}
+        >
+          <option value="all">All</option>
+          <option value="admin">Administrator</option>
+          <option value="support">Customer Support</option>
+        </select>
+      </article>
+
       <div className="stack">
-        {employees.map((employee) => (
+        <p>All Employees ({filteredEmployees.length})</p>
+        {filteredEmployees.map((employee) => (
           <article key={employee.id} className="card">
-            <h3>
-              {employee.id} - {employee.firstName} {employee.lastName}
-            </h3>
-            <p>Role: {employee.role} </p>
+            <div className="card-header">
+              <h3>
+                {employee.id} - {employee.firstName} {employee.lastName}
+              </h3>
+              <span className="badge">{employee.role}</span>
+            </div>
             <p>Email: {employee.email}</p>
             <p>Phone: {employee.phone}</p>
           </article>

@@ -5,6 +5,7 @@ import { cartRouter } from './cart.js'
 import { coursesRouter } from './courses.js'
 import { employeesRouter } from './employees.js'
 import { healthRouter } from './health.js'
+import { instructorsRouter } from './instructors.js'
 import { ordersRouter } from './orders.js'
 import { studentsRouter } from './students.js'
 import { ticketsRouter } from './tickets.js'
@@ -18,6 +19,7 @@ apiRouter.use('/health', healthRouter)
 apiRouter.use(requireAuth)
 apiRouter.use('/books', booksRouter)
 apiRouter.use('/universities', universitiesRouter)
+apiRouter.use('/instructors', instructorsRouter)
 apiRouter.use('/courses', coursesRouter)
 apiRouter.use('/students', studentsRouter)
 apiRouter.use('/employees', employeesRouter)

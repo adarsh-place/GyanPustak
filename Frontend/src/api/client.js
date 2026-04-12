@@ -49,8 +49,35 @@ export const apiClient = {
   getUniversities() {
     return request('/universities')
   },
+  getInstructors() {
+    return request('/instructors')
+  },
+  createInstructor(payload) {
+    return request('/instructors/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  createUniversity(payload) {
+    return request('/universities/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  createDepartment(universityId, payload) {
+    return request(`/universities/${universityId}/departments/add`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
   getCourses() {
     return request('/courses')
+  },
+  createCourse(payload) {
+    return request('/courses/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
   getStudents() {
     return request('/students')

@@ -21,11 +21,6 @@
   color: #475569;
 }
 
-.students-page .form {
-  gap: 12px;
-  max-width: 600px;
-}
-
 .students-page .input {
   width: 100%;
 }

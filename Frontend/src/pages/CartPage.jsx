@@ -6,9 +6,24 @@ import './CartPage.css'
 function CartPage() {
   const { activeRole, cart, cartBooks, student, reloadCart, reloadOrders } = useGyanPustak()
   const [shippingType, setShippingType] = useState('standard')
+  const [paymentDetails, setPaymentDetails] = useState({
+    creditCardNumber: '',
+    creditCardExpirationDate: '',
+    creditCardHolderName: '',
+    creditCardType: 'Visa',
+  })
   const [actionMessage, setActionMessage] = useState('')
   const [actionType, setActionType] = useState('info')
   const [isActionLoading, setIsActionLoading] = useState(false)
+
+  const isValidCardNumber = (cardNumber) => {
+    const digitsOnly = cardNumber.replace(/\s+/g, '')
+    return /^\d{16}$/.test(digitsOnly)
+  }
+
+  const isValidExpiry = (expiry) => {
+    return /^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry.trim())
+  }
 
   const handleRemove = async (bookId) => {
     setActionMessage('Removing from cart...')
@@ -34,6 +49,29 @@ function CartPage() {
       return
     }
 
+    if (
+      !paymentDetails.creditCardNumber.trim() ||
+      !paymentDetails.creditCardExpirationDate.trim() ||
+      !paymentDetails.creditCardHolderName.trim() ||
+      !paymentDetails.creditCardType.trim()
+    ) {
+      setActionMessage('Card number, expiry date, holder name and card type are required')
+      setActionType('error')
+      return
+    }
+
+    if (!isValidCardNumber(paymentDetails.creditCardNumber)) {
+      setActionMessage('Invalid card number format (use 16 digits)')
+      setActionType('error')
+      return
+    }
+
+    if (!isValidExpiry(paymentDetails.creditCardExpirationDate)) {
+      setActionMessage('Invalid expiry format (use MM/YY)')
+      setActionType('error')
+      return
+    }
+
     setActionMessage('Placing order...')
     setActionType('info')
     setIsActionLoading(true)
@@ -42,10 +80,10 @@ function CartPage() {
       await apiClient.createOrderFromCart({
         studentId: student.id,
         shippingType,
-        creditCardNumber: '**** **** **** 1245',
-        creditCardExpirationDate: '11/29',
-        creditCardHolderName: `${student.firstName} ${student.lastName}`,
-        creditCardType: 'Visa',
+        creditCardNumber: paymentDetails.creditCardNumber.replace(/\s+/g, ''),
+        creditCardExpirationDate: paymentDetails.creditCardExpirationDate.trim(),
+        creditCardHolderName: paymentDetails.creditCardHolderName.trim(),
+        creditCardType: paymentDetails.creditCardType.trim(),
         status: 'new',
       })
       await Promise.all([reloadCart(), reloadOrders()])
@@ -71,7 +109,10 @@ function CartPage() {
     )
   }
 
-  const total = cartBooks.reduce((sum, book) => sum + book.price, 0)
+  const total = cartBooks.reduce(
+    (sum, book) => (book.purchaseOption === 'buy' ? sum + book.price : sum),
+    0,
+  )
 
   return (
     <section className="section-stack cart-page">
@@ -87,8 +128,6 @@ function CartPage() {
         </p>
       </article>
 
-      {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
-
       {cartBooks.length === 0 ? (
         <article className="card">
           <p>Your cart is currently empty.</p>
@@ -99,18 +138,69 @@ function CartPage() {
             <article key={book.id} className="card">
               <div className="card-header">
                 <h3>{book.title}</h3>
-                <span className="badge">₹{book.price}</span>
+                {book.purchaseOption === 'buy' ? <span className="badge">₹{book.price}</span> : null}
               </div>
               <p>{book.format} • {book.type}</p>
+              <p>Option: {book.purchaseOption || 'buy'}</p>
               <button className="button button-secondary" onClick={() => handleRemove(book.id)} disabled={isActionLoading}>
                 Remove
               </button>
             </article>
           ))}
 
+          {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
+          
           <article className="card form">
             <h3>Checkout</h3>
             <p>Total amount: ₹{total}</p>
+            <input
+              className="input"
+              placeholder="Card number"
+              value={paymentDetails.creditCardNumber}
+              onChange={(event) =>
+                setPaymentDetails((previous) => ({
+                  ...previous,
+                  creditCardNumber: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Expiry date (MM/YY)"
+              value={paymentDetails.creditCardExpirationDate}
+              onChange={(event) =>
+                setPaymentDetails((previous) => ({
+                  ...previous,
+                  creditCardExpirationDate: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Card holder name"
+              value={paymentDetails.creditCardHolderName}
+              onChange={(event) =>
+                setPaymentDetails((previous) => ({
+                  ...previous,
+                  creditCardHolderName: event.target.value,
+                }))
+              }
+            />
+            <select
+              className="input"
+              value={paymentDetails.creditCardType}
+              onChange={(event) =>
+                setPaymentDetails((previous) => ({
+                  ...previous,
+                  creditCardType: event.target.value,
+                }))
+              }
+            >
+              <option value="Visa">Visa</option>
+              <option value="Mastercard">Mastercard</option>
+              <option value="RuPay">RuPay</option>
+              <option value="Amex">Amex</option>
+            </select>
             <select
               className="input"
               value={shippingType}

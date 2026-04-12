@@ -8,6 +8,15 @@ export const cartRouter = Router()
 
 cartRouter.use(requireRoles(['student']))
 
+async function ensureCartItemPurchaseOptionColumn(client) {
+  await client.query(
+    `
+      ALTER TABLE cart_items
+      ADD COLUMN IF NOT EXISTS purchase_option TEXT NOT NULL DEFAULT 'buy'
+    `,
+  )
+}
+
 async function ensureCart(client, studentId) {
   const cartResult = await client.query('SELECT * FROM carts WHERE student_id = $1', [studentId])
   if (cartResult.rowCount > 0) {
@@ -23,9 +32,11 @@ async function ensureCart(client, studentId) {
 }
 
 async function buildCart(cartRow) {
+  await ensureCartItemPurchaseOptionColumn(pool)
+
   const itemsResult = await pool.query(
     `
-      SELECT ci.book_id, ci.quantity, b.title, b.price, b.format, b.type
+      SELECT ci.book_id, ci.quantity, ci.purchase_option, b.title, b.price, b.format, b.type
       FROM cart_items ci
       JOIN books b ON b.id = ci.book_id
       WHERE ci.cart_id = $1
@@ -42,6 +53,7 @@ async function buildCart(cartRow) {
     items: itemsResult.rows.map((item) => ({
       bookId: item.book_id,
       quantity: item.quantity,
+      purchaseOption: item.purchase_option,
       title: item.title,
       price: Number(item.price),
       format: item.format,
@@ -79,23 +91,29 @@ cartRouter.post(
   '/items/add',
   asyncHandler(async (request, response) => {
     const studentId = request.auth.userId;
-    const { bookId, quantity = 1 } = request.body
+    const { bookId, quantity = 1, purchaseOption = 'buy' } = request.body
     if (!bookId) {
       throw new HttpError(400, 'bookId is required')
+    }
+
+    if (!['buy', 'rent'].includes(purchaseOption)) {
+      throw new HttpError(400, 'purchaseOption must be either buy or rent')
     }
 
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
+      await ensureCartItemPurchaseOptionColumn(client)
       const cart = await ensureCart(client, studentId)
       await client.query(
         `
-          INSERT INTO cart_items (cart_id, book_id, quantity)
-          VALUES ($1, $2, $3)
+          INSERT INTO cart_items (cart_id, book_id, quantity, purchase_option)
+          VALUES ($1, $2, $3, $4)
           ON CONFLICT (cart_id, book_id)
-          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity
+          DO UPDATE SET quantity = cart_items.quantity + EXCLUDED.quantity,
+                        purchase_option = EXCLUDED.purchase_option
         `,
-        [cart.id, bookId, quantity],
+        [cart.id, bookId, quantity, purchaseOption],
       )
       await client.query('UPDATE carts SET updated_at = NOW() WHERE id = $1', [cart.id])
       await client.query('COMMIT')

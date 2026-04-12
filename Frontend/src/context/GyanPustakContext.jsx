@@ -34,7 +34,9 @@ function mapStudent(studentRow) {
     address: studentRow.address,
     phoneNumber: studentRow.phone_number,
     dateOfBirth: studentRow.date_of_birth,
-    university: studentRow.university_affiliation,
+    university: studentRow.university_name || studentRow.university_affiliation,
+    universityId: studentRow.university_affiliation,
+    universityName: studentRow.university_name || studentRow.university_affiliation,
     major: studentRow.major_field_of_study,
     status: studentRow.student_status,
     yearOfStudy: studentRow.year_of_study,
@@ -108,12 +110,18 @@ function mapCourse(courseRow, universityName) {
   }
 }
 
+function mapCourses(courseRows, universitiesList) {
+  const universityById = new Map(universitiesList.map((university) => [university.id, university.name]))
+  return (courseRows || []).map((courseRow) => mapCourse(courseRow, universityById.get(courseRow.universityId)))
+}
+
 function mapTicket(ticketRow) {
   return {
     id: ticketRow.id,
     category: ticketRow.category,
     createdBy: ticketRow.createdBy,
     createdById: ticketRow.createdById,
+    createdByName: ticketRow.createdByName,
     title: ticketRow.title,
     problemDescription: ticketRow.problemDescription,
     solutionDescription: ticketRow.solutionDescription,
@@ -121,11 +129,13 @@ function mapTicket(ticketRow) {
     completionDate: toDisplayDate(ticketRow.completionDate),
     status: ticketRow.status,
     resolvedBy: ticketRow.resolvedBy,
+    resolvedByName: ticketRow.resolvedByName,
     history: (ticketRow.history || []).map((historyEntry) => ({
       status: historyEntry.status,
       by: historyEntry.by,
       date: toDisplayDate(historyEntry.date),
       byId: historyEntry.byId,
+      byName: historyEntry.byName,
     })),
   }
 }
@@ -143,6 +153,7 @@ function mapCart(cartRow) {
       format: item.format,
       type: item.type,
       quantity: Number(item.quantity),
+      purchaseOption: item.purchaseOption,
     })),
   }
 }
@@ -163,6 +174,18 @@ function mapOrder(orderRow) {
   }
 }
 
+function mapInstructor(instructorRow) {
+  return {
+    id: instructorRow.id,
+    firstName: instructorRow.first_name,
+    lastName: instructorRow.last_name,
+    universityId: instructorRow.university_id,
+    departmentId: instructorRow.department_id,
+    universityName: instructorRow.university_name,
+    departmentName: instructorRow.department_name,
+  }
+}
+
 function getErrorMessage(error) {
   return error instanceof Error ? error.message : 'Unexpected error'
 }
@@ -178,6 +201,7 @@ export function GyanPustakProvider({ children }) {
   const [tickets, setTickets] = useState([])
   const [cart, setCart] = useState({ id: '', studentId: '', createdAt: '', updatedAt: '', items: [] })
   const [orders, setOrders] = useState([])
+  const [instructors, setInstructors] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [isCheckingAuth] = useState(false)
@@ -197,13 +221,14 @@ export function GyanPustakProvider({ children }) {
     setError('')
 
     try {
-      const [booksResponse, universitiesResponse, coursesResponse, studentsResponse, employeesResponse, ticketsResponse] = await Promise.all([
+      const [booksResponse, universitiesResponse, coursesResponse, studentsResponse, employeesResponse, ticketsResponse, instructorsResponse] = await Promise.all([
         apiClient.getBooks(),
         apiClient.getUniversities(),
         apiClient.getCourses(),
         apiClient.getStudents(),
         apiClient.getEmployees(),
         apiClient.getTickets(),
+        apiClient.getInstructors(),
       ])
 
       const loadedUniversities = (universitiesResponse.data || []).map(mapUniversity)
@@ -211,14 +236,11 @@ export function GyanPustakProvider({ children }) {
 
       setBooks((booksResponse.data || []).map(mapBook))
       setUniversities(loadedUniversities)
-      setCourses(
-        (coursesResponse.data || []).map((courseRow) =>
-          mapCourse(courseRow, universityById.get(courseRow.universityId)),
-        ),
-      )
+      setCourses(mapCourses(coursesResponse.data || [], loadedUniversities))
       setStudents((studentsResponse.data || []).map(mapStudent))
       setEmployees((employeesResponse.data || []).map(mapEmployee))
       setTickets((ticketsResponse.data || []).map(mapTicket))
+      setInstructors((instructorsResponse.data || []).map(mapInstructor))
 
       if (activeRole === 'student') {
         const [cartResponse, ordersResponse] = await Promise.all([
@@ -271,6 +293,22 @@ export function GyanPustakProvider({ children }) {
     setBooks((booksResponse.data || []).map(mapBook))
   }, [])
 
+  const reloadUniversities = useCallback(async () => {
+    const universitiesResponse = await apiClient.getUniversities()
+    setUniversities((universitiesResponse.data || []).map(mapUniversity))
+  }, [])
+
+  const reloadCourses = useCallback(async () => {
+    const [coursesResponse, universitiesResponse] = await Promise.all([
+      apiClient.getCourses(),
+      apiClient.getUniversities(),
+    ])
+
+    const loadedUniversities = (universitiesResponse.data || []).map(mapUniversity)
+    setUniversities(loadedUniversities)
+    setCourses(mapCourses(coursesResponse.data || [], loadedUniversities))
+  }, [])
+
   const reloadTickets = useCallback(async () => {
     const ticketsResponse = await apiClient.getTickets()
     setTickets((ticketsResponse.data || []).map(mapTicket))
@@ -306,6 +344,11 @@ export function GyanPustakProvider({ children }) {
     setStudents((studentsResponse.data || []).map(mapStudent))
   }, [])
 
+  const reloadInstructors = useCallback(async () => {
+    const instructorsResponse = await apiClient.getInstructors()
+    setInstructors((instructorsResponse.data || []).map(mapInstructor))
+  }, [])
+
   const value = {
     isAuthenticated,
     activeRole,
@@ -321,16 +364,20 @@ export function GyanPustakProvider({ children }) {
     cartBooks,
     orders,
     employees,
+    instructors,
     setIsLoading,
     isLoading,
     isCheckingAuth,
     error,
     reloadBooks,
+    reloadUniversities,
+    reloadCourses,
     reloadTickets,
     reloadStudents,
     reloadEmployees,
     reloadCart,
     reloadOrders,
+    reloadInstructors,
   }
 
   return <GyanPustakContext.Provider value={value}>{children}</GyanPustakContext.Provider>

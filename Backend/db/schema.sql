@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
   cart_id TEXT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
   book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+  purchase_option TEXT NOT NULL DEFAULT 'buy' CHECK (purchase_option IN ('buy', 'rent')),
   PRIMARY KEY (cart_id, book_id)
 );
 

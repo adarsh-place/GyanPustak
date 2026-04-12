@@ -4,8 +4,10 @@ import { GyanPustakProvider, useGyanPustak } from './context/GyanPustakContext'
 import LoadingBlock from './components/LoadingBlock'
 import BooksPage from './pages/BooksPage'
 import CartPage from './pages/CartPage'
+import CoursesPage from './pages/CoursesPage'
 import DashboardPage from './pages/DashboardPage'
 import EmployeesPage from './pages/EmployeesPage'
+import InstructorsPage from './pages/InstructorsPage'
 import LoginPage from './pages/LoginPage'
 import OrdersPage from './pages/OrdersPage'
 import StudentsPage from './pages/StudentsPage'
@@ -16,10 +18,12 @@ const visibleNavLinks = [
   { to: '/', label: 'Dashboard' },
   { to: '/books', label: 'Books' },
   { to: '/universities', label: 'Universities' },
+  { to: '/courses', label: 'Courses' },
+  { to: '/instructors', label: 'Instructors' },
   { to: '/tickets', label: 'Tickets' },
   { to: '/cart', label: 'Cart', studentOnly: true },
   { to: '/orders', label: 'Orders', studentOnly: true },
-  { to: '/students', label: 'Students', adminOnly: true },
+  { to: '/students', label: 'Students', staffOnly: true },
   { to: '/employees', label: 'Employees' },
 ]
 
@@ -45,6 +49,7 @@ function AppContent() {
   const allowedNavLinks = visibleNavLinks.filter((link) => {
     if (link.studentOnly && activeRole !== 'student') return false
     if (link.adminOnly && activeRole !== 'admin' && activeRole !== 'superadmin') return false
+    if (link.staffOnly && !['support', 'admin', 'superadmin'].includes(activeRole)) return false
     return true
   })
 
@@ -116,6 +121,8 @@ function AppContent() {
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/books" element={<BooksPage />} />
                 <Route path="/universities" element={<UniversitiesPage />} />
+                <Route path="/courses" element={<CoursesPage />} />
+                <Route path="/instructors" element={<InstructorsPage />} />
                 <Route path="/tickets" element={<TicketsPage />} />
                 <Route
                   path="/cart"
@@ -128,7 +135,7 @@ function AppContent() {
                 <Route
                   path="/students"
                   element={
-                    activeRole === 'admin' || activeRole === 'superadmin' ? (
+                    activeRole === 'support' || activeRole === 'admin' || activeRole === 'superadmin' ? (
                       <StudentsPage />
                     ) : (
                       <Navigate to="/" replace />

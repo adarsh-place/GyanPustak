@@ -50,7 +50,7 @@ function LoginPage() {
             <input
               className="input"
               type="email"
-              placeholder="student@example.com"
+              placeholder="name@example.com"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               disabled={isLoading}

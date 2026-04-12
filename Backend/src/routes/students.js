@@ -12,8 +12,23 @@ studentsRouter.get(
   asyncHandler(async (request, response) => {
     const isStudent = request.auth?.role === 'student'
     const result = isStudent
-      ? await pool.query('SELECT * FROM students WHERE id = $1', [request.auth.userId])
-      : await pool.query('SELECT * FROM students ORDER BY created_at DESC')
+      ? await pool.query(
+          `
+            SELECT s.*, u.name AS university_name
+            FROM students s
+            LEFT JOIN universities u ON u.id = s.university_affiliation
+            WHERE s.id = $1
+          `,
+          [request.auth.userId],
+        )
+      : await pool.query(
+          `
+            SELECT s.*, u.name AS university_name
+            FROM students s
+            LEFT JOIN universities u ON u.id = s.university_affiliation
+            ORDER BY s.created_at DESC
+          `,
+        )
 
     response.json({ success: true, data: result.rows })
   }),

@@ -19,7 +19,9 @@ function TicketsPage() {
   const [actionMessage, setActionMessage] = useState('')
   const [actionType, setActionType] = useState('info')
   const [isActionLoading, setIsActionLoading] = useState(false)
-  const [expandedTickets, setExpandedTickets] = useState({});
+  const [expandedTickets, setExpandedTickets] = useState({})
+  const [solutionInputs, setSolutionInputs] = useState({})
+  const [statusFilter, setStatusFilter] = useState('all')
 
   const toggleTicketHistory = (ticketId) => {
     setExpandedTickets((previous) => ({
@@ -30,12 +32,25 @@ function TicketsPage() {
 
   const canCreateTickets = ['student', 'support'].includes(activeRole)
 
-  const visibleTickets = useMemo(() => {
-    if (activeRole === 'student') {
-      return tickets.filter((ticket) => ticket.createdBy === 'student')
+  const formatRole = (role) => {
+    if (!role) {
+      return ''
     }
-    return tickets
-  }, [activeRole, tickets])
+    return role.charAt(0).toUpperCase() + role.slice(1)
+  }
+
+  const visibleTickets = useMemo(() => {
+    const roleFilteredTickets =
+      activeRole === 'student'
+        ? tickets.filter((ticket) => ticket.createdBy === 'student')
+        : tickets
+
+    if (statusFilter === 'all') {
+      return roleFilteredTickets
+    }
+
+    return roleFilteredTickets.filter((ticket) => ticket.status === statusFilter)
+  }, [activeRole, statusFilter, tickets])
 
   const submitTicket = (event) => {
     event.preventDefault()
@@ -108,6 +123,13 @@ function TicketsPage() {
       return
     }
 
+    const solutionText = (solutionInputs[ticketId] || '').trim()
+    if (nextStatus === 'completed' && !solutionText) {
+      setActionMessage('Please enter the solution before marking the ticket completed')
+      setActionType('error')
+      return
+    }
+
     setActionMessage('Updating ticket status...')
     setActionType('info')
     setIsActionLoading(true)
@@ -117,12 +139,14 @@ function TicketsPage() {
         status: nextStatus,
         changedByType: activeRole,
         changedById: activeRole === 'admin' ? 'E4001' : 'E5001',
-        solutionDescription:
-          nextStatus === 'completed' ? 'Issue resolved by administrator.' : undefined,
+        solutionDescription: nextStatus === 'completed' ? solutionText : undefined,
         resolvedByEmployeeId:
           nextStatus === 'completed' ? (activeRole === 'admin' ? 'E4001' : 'E5001') : undefined,
       })
       await reloadTickets()
+      if (nextStatus === 'completed') {
+        setSolutionInputs((previous) => ({ ...previous, [ticketId]: '' }))
+      }
       setActionMessage('Ticket updated successfully')
       setActionType('success')
     } catch (error) {
@@ -182,6 +206,23 @@ function TicketsPage() {
 
       {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
 
+      <div className="card form">
+        <h3>Filter by Status</h3>
+        <select
+          className="input"
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+        >
+          <option value="all">All Statuses</option>
+          <option value="new">New</option>
+          <option value="assigned">Assigned</option>
+          <option value="in-process">In Process</option>
+          <option value="completed">Completed</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+
+      <p>{activeRole === 'student' ? 'My' : 'All'} Tickets ({visibleTickets.length})</p>
       <div className="stack">
         {visibleTickets.map((ticket) => {
           const supportCanAssign = activeRole === 'support' && ticket.status === 'new'
@@ -199,16 +240,33 @@ function TicketsPage() {
               </div>
               <p>
                 Category: {ticket.category} | Logged: {ticket.loggedDate} | Created by:{' '}
-                {ticket.createdBy}
+                {formatRole(ticket.createdBy)} ({ticket.createdByName || ticket.createdById || 'N/A'})
               </p>
               <p>{ticket.problemDescription}</p>
               {ticket.solutionDescription && <p>Solution: {ticket.solutionDescription}</p>}
+              {ticket.resolvedBy && (
+                <p>
+                  Resolved by: {ticket.resolvedByName || ticket.resolvedBy}
+                </p>
+              )}
 
               <div className="inline-actions">
                 {supportCanAssign && (
                   <button className="button" onClick={() => assignTicket(ticket.id)} disabled={isActionLoading}>
                     Assign to Admin
                   </button>
+                )}
+
+                {adminCanProgress && ticket.status === 'in-process' && (
+                  <textarea
+                    className="input"
+                    rows={3}
+                    placeholder="Enter solution before marking completed"
+                    value={solutionInputs[ticket.id] || ''}
+                    onChange={(event) =>
+                      setSolutionInputs((previous) => ({ ...previous, [ticket.id]: event.target.value }))
+                    }
+                  />
                 )}
 
                 {adminCanProgress && (
@@ -237,7 +295,9 @@ function TicketsPage() {
                         </div>
                         <div className="timeline-content">
                           <div className="checkpoint-status">{item.status.toUpperCase()}</div>
-                          <div className="checkpoint-meta">{item.by} • {item.date}</div>
+                          <div className="checkpoint-meta">
+                            {formatRole(item.by)} ({item.byName || item.byId || 'N/A'}) • {item.date}
+                          </div>
                         </div>
                       </div>
                     ))}

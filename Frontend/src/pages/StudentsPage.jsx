@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { apiClient } from '../api/client'
 import { useGyanPustak } from '../context/GyanPustakContext'
 import './StudentsPage.css'
 
 function StudentsPage() {
   const { activeRole, students, reloadStudents } = useGyanPustak()
+  const canManageStudents = activeRole === 'admin' || activeRole === 'superadmin'
 
   const [formState, setFormState] = useState({
     firstName: '',
@@ -18,9 +19,18 @@ function StudentsPage() {
   })
   const [universities, setUniversities] = useState([])
   const [isLoadingUniversities, setIsLoadingUniversities] = useState(false)
+  const [universityFilter, setUniversityFilter] = useState('all')
   const [actionMessage, setActionMessage] = useState('')
   const [actionType, setActionType] = useState('info')
   const [isActionLoading, setIsActionLoading] = useState(false)
+
+  const filteredStudents = useMemo(() => {
+    if (universityFilter === 'all') {
+      return students
+    }
+
+    return students.filter((student) => student.universityId === universityFilter)
+  }, [students, universityFilter])
 
   useEffect(() => {
     const fetchUniversities = async () => {
@@ -164,22 +174,11 @@ function StudentsPage() {
     }
   }
 
-  if (activeRole !== 'admin' && activeRole !== 'superadmin') {
-    return (
-      <section className="section-stack">
-        <h2>Students</h2>
-        <article className="card">
-          <p>Only admins and superadmins can manage students.</p>
-        </article>
-      </section>
-    )
-  }
-
   return (
     <section className="section-stack students-page">
-      <h2>Student Management</h2>
+      <h2>{canManageStudents ? 'Student Management' : 'Students'}</h2>
 
-      <form className="card form" onSubmit={submitStudent}>
+      {canManageStudents && <form className="card form" onSubmit={submitStudent}>
         <h3>Add New Student</h3>
         <input
           className="input"
@@ -294,16 +293,38 @@ function StudentsPage() {
         <button className="button" type="submit" disabled={isActionLoading}>
           {isActionLoading ? 'Working...' : 'Add Student'}
         </button>
-      </form>
+      </form>}
 
-      <h3 style={{ marginTop: '20px' }}>All Students ({students.length})</h3>
+      <article className="card form">
+        <h3>Filter Students</h3>
+        <select
+          className="input"
+          value={universityFilter}
+          onChange={(event) => setUniversityFilter(event.target.value)}
+        >
+          <option value="all">All Universities</option>
+          {isLoadingUniversities ? (
+            <option disabled>Loading universities...</option>
+          ) : universities.length > 0 ? (
+            universities.map((university) => (
+              <option key={university.id} value={university.id}>
+                {university.name}
+              </option>
+            ))
+          ) : (
+            <option disabled>No universities available</option>
+          )}
+        </select>
+      </article>
+
+      <h3 style={{ marginTop: '20px' }}>All Students ({filteredStudents.length})</h3>
       <div className="stack">
-        {students.length === 0 ? (
+        {filteredStudents.length === 0 ? (
           <article className="card">
             <p>No students found.</p>
           </article>
         ) : (
-          students.map((student) => (
+          filteredStudents.map((student) => (
             <article key={student.id} className="card">
               <h4>
                 {student.id} - {student.firstName} {student.lastName}
@@ -311,7 +332,7 @@ function StudentsPage() {
               <p>Email: {student.email}</p>
               <p>Phone: {student.phoneNumber || 'N/A'}</p>
               <p>
-                University: {student.university} | Major: {student.major}
+                University: {student.universityName || student.university} | Major: {student.major}
               </p>
               <p>
                 Status: {student.status} | Year: {student.yearOfStudy}

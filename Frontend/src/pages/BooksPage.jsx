@@ -28,19 +28,19 @@ function BooksPage() {
   const [actionType, setActionType] = useState('info')
   const [isActionLoading, setIsActionLoading] = useState(false)
 
-  const handleAddToCart = async (bookId) => {
+  const handleAddToCart = async (bookId, purchaseOption = 'buy', optionLabel = 'book') => {
     if (activeRole !== 'student') {
       return
     }
 
-    setActionMessage('Adding to cart...')
+    setActionMessage(`Adding ${optionLabel} option to cart...`)
     setActionType('info')
     setIsActionLoading(true)
 
     try {
-      await apiClient.addCartItem({ bookId, quantity: 1 })
+      await apiClient.addCartItem({ bookId, quantity: 1, purchaseOption })
       await reloadCart()
-      setActionMessage('Book added successfully')
+      setActionMessage(`${optionLabel} option added successfully`)
       setActionType('success')
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : 'Failed to add book to cart')
@@ -153,12 +153,6 @@ function BooksPage() {
   return (
     <section className="section-stack books-page">
       <h2>Books</h2>
-      <input
-        className="input"
-        placeholder="Search by title, author, ISBN, category or keyword"
-        value={searchTerm}
-        onChange={(event) => setSearchTerm(event.target.value)}
-      />
 
       {(activeRole === 'admin' || activeRole === 'superadmin') && (
         <form className="card form" onSubmit={handleAddBook}>
@@ -213,6 +207,14 @@ function BooksPage() {
         <article className={`status-message ${actionType}`}>{actionMessage}</article>
       )}
 
+      <input
+        className="input"
+        placeholder="Search by title, author, ISBN, category or keyword"
+        value={searchTerm}
+        onChange={(event) => setSearchTerm(event.target.value)}
+      />
+      
+      <p>Books ({filteredBooks.length})</p>
       <div className="stack">
         {filteredBooks.map((book) => (
           <article key={book.id} className="card">
@@ -233,13 +235,16 @@ function BooksPage() {
 
             <div className="inline-actions">
               {activeRole === 'student' && !cartBookIds.has(book.id) ? (
-                <button
-                  className="button"
-                  onClick={() => handleAddToCart(book.id)}
-                  disabled={isActionLoading}
-                >
-                  Add to Cart
-                </button>
+                (book.purchaseOption || []).map((option) => (
+                  <button
+                    key={option}
+                    className="button"
+                    onClick={() => handleAddToCart(book.id, option, option === 'buy' ? 'Buy' : 'Rent')}
+                    disabled={isActionLoading}
+                  >
+                    {option === 'buy' ? 'Buy' : 'Rent'}
+                  </button>
+                ))
               ) : activeRole === 'student' ? (
                 <span className="badge">Already in cart</span>
               ) : null}
@@ -247,16 +252,7 @@ function BooksPage() {
           </article>
         ))}
       </div>
-
-      <article className="card">
-        <h3>Course Mappings</h3>
-        {courses.map((course) => (
-          <p key={course.id}>
-            {course.id} - {course.name} ({course.semester} {course.year}) | Books:{' '}
-            {course.books.map((entry) => `${entry.bookId} (${entry.relation})`).join(', ')}
-          </p>
-        ))}
-      </article>
+      
     </section>
   )
 }

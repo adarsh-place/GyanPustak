@@ -65,7 +65,6 @@ universitiesRouter.post(
   requireRoles(['admin','superadmin']),
   asyncHandler(async (request, response) => {
     const {
-      id,
       name,
       address,
       representativeFirstName,
@@ -74,30 +73,104 @@ universitiesRouter.post(
       representativePhone,
     } = request.body
 
-    if (!id || !name || !address || !representativeFirstName || !representativeLastName || !representativeEmail || !representativePhone) {
+    if (!name || !address || !representativeFirstName || !representativeLastName || !representativeEmail || !representativePhone) {
       throw new HttpError(400, 'Missing required university fields')
     }
 
-    const result = await pool.query(
-      `
-        INSERT INTO universities (
-          id, name, address, representative_first_name, representative_last_name,
-          representative_email, representative_phone
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *
-      `,
-      [
-        id,
-        name,
-        address,
-        representativeFirstName,
-        representativeLastName,
-        representativeEmail,
-        representativePhone,
-      ],
-    )
+    const client = await pool.connect()
+    let result = null
+    try {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const generatedId = `U${Date.now()}${Math.floor(100 + Math.random() * 900)}`
+        try {
+          result = await client.query(
+            `
+              INSERT INTO universities (
+                id, name, address, representative_first_name, representative_last_name,
+                representative_email, representative_phone
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+              RETURNING *
+            `,
+            [
+              generatedId,
+              name,
+              address,
+              representativeFirstName,
+              representativeLastName,
+              representativeEmail,
+              representativePhone,
+            ],
+          )
+          break
+        } catch (error) {
+          if (error?.code === '23505' && error?.constraint === 'universities_pkey') {
+            continue
+          }
+          throw error
+        }
+      }
+    } finally {
+      client.release()
+    }
+
+    if (!result) {
+      throw new HttpError(500, 'Failed to generate unique university id')
+    }
 
     const [university] = await Promise.all(result.rows.map((row) => buildUniversity(row)))
     response.status(201).json({ success: true, data: university })
+  }),
+)
+
+universitiesRouter.post(
+  '/:universityId/departments/add',
+  requireRoles(['admin', 'superadmin']),
+  asyncHandler(async (request, response) => {
+    const { universityId } = request.params
+    const { name } = request.body
+
+    if (!name || !name.trim()) {
+      throw new HttpError(400, 'Department name is required')
+    }
+
+    // Verify university exists
+    const universityResult = await pool.query('SELECT * FROM universities WHERE id = $1', [universityId])
+    if (universityResult.rowCount === 0) {
+      throw new HttpError(404, 'University not found')
+    }
+
+    const client = await pool.connect()
+    let result = null
+    try {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const generatedDepartmentId = `D${Date.now()}${Math.floor(100 + Math.random() * 900)}`
+        try {
+          result = await client.query(
+            'INSERT INTO departments (id, university_id, name) VALUES ($1, $2, $3) RETURNING *',
+            [generatedDepartmentId, universityId, name.trim()],
+          )
+          break
+        } catch (error) {
+          if (error?.code === '23505' && error?.constraint === 'departments_pkey') {
+            continue
+          }
+          throw error
+        }
+      }
+    } finally {
+      client.release()
+    }
+
+    if (!result) {
+      throw new HttpError(500, 'Failed to generate unique department id')
+    }
+
+    response.status(201).json({
+      success: true,
+      data: {
+        id: result.rows[0].id,
+        name: result.rows[0].name,
+      },
+    })
   }),
 )

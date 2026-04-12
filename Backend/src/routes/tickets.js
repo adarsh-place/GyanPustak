@@ -8,13 +8,43 @@ export const ticketsRouter = Router()
 async function buildTicket(ticketRow) {
   const historyResult = await pool.query(
     `
-      SELECT status, changed_by_type, changed_by_id, changed_at
-      FROM ticket_status_history
-      WHERE ticket_id = $1
-      ORDER BY changed_at ASC, id ASC
+      SELECT
+        tsh.status,
+        tsh.changed_by_type,
+        tsh.changed_by_id,
+        tsh.changed_at,
+        CASE
+          WHEN tsh.changed_by_type = 'student' THEN CONCAT_WS(' ', s.first_name, s.last_name)
+          ELSE CONCAT_WS(' ', e.first_name, e.last_name)
+        END AS changed_by_name
+      FROM ticket_status_history tsh
+      LEFT JOIN students s
+        ON tsh.changed_by_type = 'student' AND s.id = tsh.changed_by_id
+      LEFT JOIN employees e
+        ON tsh.changed_by_type IN ('support', 'admin', 'superadmin') AND e.id = tsh.changed_by_id
+      WHERE tsh.ticket_id = $1
+      ORDER BY tsh.changed_at ASC, tsh.id ASC
     `,
     [ticketRow.id],
   )
+
+  const creatorResult =
+    ticketRow.created_by_type === 'student'
+      ? await pool.query('SELECT first_name, last_name FROM students WHERE id = $1', [ticketRow.created_by_id])
+      : await pool.query('SELECT first_name, last_name FROM employees WHERE id = $1', [ticketRow.created_by_id])
+
+  const resolverResult = ticketRow.resolved_by_employee_id
+    ? await pool.query('SELECT first_name, last_name FROM employees WHERE id = $1', [ticketRow.resolved_by_employee_id])
+    : null
+
+  const creatorName =
+    creatorResult?.rowCount > 0
+      ? `${creatorResult.rows[0].first_name} ${creatorResult.rows[0].last_name}`.trim()
+      : ''
+  const resolverName =
+    resolverResult?.rowCount > 0
+      ? `${resolverResult.rows[0].first_name} ${resolverResult.rows[0].last_name}`.trim()
+      : ''
 
   return {
     id: ticketRow.id,
@@ -28,11 +58,14 @@ async function buildTicket(ticketRow) {
     completionDate: ticketRow.completion_date,
     status: ticketRow.status,
     resolvedBy: ticketRow.resolved_by_employee_id,
+    createdByName: creatorName,
+    resolvedByName: resolverName,
     history: historyResult.rows.map((row) => ({
       status: row.status,
       by: row.changed_by_type,
       date: row.changed_at,
       byId: row.changed_by_id,
+      byName: row.changed_by_name || '',
     })),
   }
 }

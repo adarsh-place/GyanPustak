@@ -31,6 +31,7 @@ function OrdersPage() {
   return (
     <section className="section-stack orders-page">
       <h2>Orders</h2>
+      <p>My Orders ({orders.length})</p>
       {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
       <div className="stack">
         {orders.length === 0 ? (

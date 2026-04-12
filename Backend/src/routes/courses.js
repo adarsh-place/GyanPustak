@@ -82,43 +82,66 @@ coursesRouter.post(
   '/add',
   requireRoles(['admin','superadmin']),
   asyncHandler(async (request, response) => {
-    const { id, universityId, name, year, semester, departmentIds = [], instructorIds = [], books = [] } = request.body
+    const { universityId, name, year, semester, departmentIds = [], instructorIds = [], books = [] } = request.body
 
-    if (!id || !universityId || !name || !year || !semester) {
+    if (!universityId || !name || !year || !semester) {
       throw new HttpError(400, 'Missing required course fields')
     }
 
+    const universityResult = await pool.query('SELECT id FROM universities WHERE id = $1', [universityId])
+    if (universityResult.rowCount === 0) {
+      throw new HttpError(404, 'University not found')
+    }
+
     const client = await pool.connect()
+    let result = null
     try {
       await client.query('BEGIN')
-      const result = await client.query(
-        `
-          INSERT INTO courses (id, university_id, name, year, semester)
-          VALUES ($1, $2, $3, $4, $5)
-          RETURNING *
-        `,
-        [id, universityId, name, year, semester],
-      )
 
-      for (const departmentId of departmentIds) {
-        await client.query(
-          'INSERT INTO course_departments (course_id, department_id) VALUES ($1, $2)',
-          [id, departmentId],
-        )
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const generatedId = `C${Date.now()}${Math.floor(100 + Math.random() * 900)}`
+        try {
+          result = await client.query(
+            `
+              INSERT INTO courses (id, university_id, name, year, semester)
+              VALUES ($1, $2, $3, $4, $5)
+              RETURNING *
+            `,
+            [generatedId, universityId, name, year, semester],
+          )
+
+          for (const departmentId of departmentIds) {
+            await client.query(
+              'INSERT INTO course_departments (course_id, department_id) VALUES ($1, $2)',
+              [generatedId, departmentId],
+            )
+          }
+
+          for (const instructorId of instructorIds) {
+            await client.query(
+              'INSERT INTO course_instructors (course_id, instructor_id) VALUES ($1, $2)',
+              [generatedId, instructorId],
+            )
+          }
+
+          for (const book of books) {
+            await client.query(
+              'INSERT INTO course_books (course_id, book_id, relation) VALUES ($1, $2, $3)',
+              [generatedId, book.bookId, book.relation],
+            )
+          }
+
+          break
+        } catch (error) {
+          if (error?.code === '23505' && error?.constraint === 'courses_pkey') {
+            continue
+          }
+          throw error
+        }
       }
 
-      for (const instructorId of instructorIds) {
-        await client.query(
-          'INSERT INTO course_instructors (course_id, instructor_id) VALUES ($1, $2)',
-          [id, instructorId],
-        )
-      }
-
-      for (const book of books) {
-        await client.query(
-          'INSERT INTO course_books (course_id, book_id, relation) VALUES ($1, $2, $3)',
-          [id, book.bookId, book.relation],
-        )
+      if (!result) {
+        throw new HttpError(500, 'Failed to generate unique course id')
       }
 
       await client.query('COMMIT')
