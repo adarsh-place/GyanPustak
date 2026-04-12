@@ -40,6 +40,8 @@ employeesRouter.post(
       throw new HttpError(400, 'Invalid employee role')
     }
 
+    const normalizedAadhaarNumber = aadhaarNumber.trim()
+
     const defaultPassword = 'password123'
     const passwordHash = await bcrypt.hash(defaultPassword, 10)
 
@@ -51,7 +53,7 @@ employeesRouter.post(
         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
         RETURNING *
       `,
-      [id, firstName, lastName, gender, salary, aadhaarNumber, email, address, telephoneNumber, role, passwordHash],
+      [id, firstName, lastName, gender, salary, normalizedAadhaarNumber, email, address, telephoneNumber, role, passwordHash],
     )
 
     response.status(201).json({ success: true, data: result.rows[0] })

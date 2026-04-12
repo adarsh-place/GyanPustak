@@ -45,11 +45,15 @@ function TicketsPage() {
         ? tickets.filter((ticket) => ticket.createdBy === 'student')
         : tickets
 
+    const adminFilteredTickets = ['admin', 'superadmin'].includes(activeRole)
+      ? roleFilteredTickets.filter((ticket) => ticket.status !== 'new')
+      : roleFilteredTickets
+
     if (statusFilter === 'all') {
-      return roleFilteredTickets
+      return adminFilteredTickets
     }
 
-    return roleFilteredTickets.filter((ticket) => ticket.status === statusFilter)
+    return adminFilteredTickets.filter((ticket) => ticket.status === statusFilter)
   }, [activeRole, statusFilter, tickets])
 
   const submitTicket = (event) => {
@@ -214,7 +218,7 @@ function TicketsPage() {
           onChange={(event) => setStatusFilter(event.target.value)}
         >
           <option value="all">All Statuses</option>
-          <option value="new">New</option>
+          {!['admin', 'superadmin'].includes(activeRole) && <option value="new">New</option>}
           <option value="assigned">Assigned</option>
           <option value="in-process">In Process</option>
           <option value="completed">Completed</option>

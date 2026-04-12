@@ -10,18 +10,18 @@ function BooksPage() {
     title: '',
     type: 'new',
     price: '',
-    quantity: '1',
+    quantity: '',
     authors: '',
     isbn: '',
     publisher: '',
     publicationDate: '',
-    edition: '1',
-    language: 'English',
+    edition: '',
+    language: '',
     format: 'softcover',
     category: '',
     subcategories: '',
     keywords: '',
-    rating: '4',
+    rating: '',
     purchaseOption: 'buy',
   })
   const [actionMessage, setActionMessage] = useState('')
@@ -102,18 +102,18 @@ function BooksPage() {
         title: '',
         type: 'new',
         price: '',
-        quantity: '1',
+        quantity: '',
         authors: '',
         isbn: '',
         publisher: '',
         publicationDate: '',
-        edition: '1',
-        language: 'English',
+        edition: '',
+        language: '',
         format: 'softcover',
         category: '',
         subcategories: '',
         keywords: '',
-        rating: '4',
+        rating: '',
         purchaseOption: 'buy',
       })
       setActionMessage('Book added successfully')
@@ -185,7 +185,7 @@ function BooksPage() {
               <option value="softcover">Softcover (Paperback)</option>
               <option value="electronic">Electronic</option>
             </select>
-            <input className="input" placeholder="Language" value={formState.language} onChange={(event) => setFormState((previous) => ({ ...previous, language: event.target.value }))} />
+            <input className="input" placeholder="Language (Ex. English)" value={formState.language} onChange={(event) => setFormState((previous) => ({ ...previous, language: event.target.value }))} />
           </div>
           <div className="books-form-row">
             <input className="input" type="number" min="1" placeholder="Edition" value={formState.edition} onChange={(event) => setFormState((previous) => ({ ...previous, edition: event.target.value }))} />

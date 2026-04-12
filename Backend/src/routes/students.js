@@ -44,7 +44,7 @@ studentsRouter.post(
       lastName,
       email,
       address = '',
-      phoneNumber = '',
+      phoneNumber,
       dateOfBirth = null,
       universityAffiliation,
       majorFieldOfStudy,
@@ -52,7 +52,17 @@ studentsRouter.post(
       yearOfStudy,
     } = request.body
 
-    if (!id || !firstName || !lastName || !email || !universityAffiliation || !majorFieldOfStudy || !studentStatus || !yearOfStudy) {
+    if (
+      !id ||
+      !firstName ||
+      !lastName ||
+      !email ||
+      !phoneNumber ||
+      !universityAffiliation ||
+      !majorFieldOfStudy ||
+      !studentStatus ||
+      !yearOfStudy
+    ) {
       throw new HttpError(400, 'Missing required student fields')
     }
 

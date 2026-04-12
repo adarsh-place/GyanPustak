@@ -11,7 +11,9 @@ function StudentsPage() {
     firstName: '',
     lastName: '',
     email: '',
+    address: '',
     phoneNumber: '',
+    dateOfBirth: '',
     university: '',
     major: '',
     status: 'undergraduate',
@@ -127,7 +129,9 @@ function StudentsPage() {
       firstName: formState.firstName.trim(),
       lastName: formState.lastName.trim(),
       email: formState.email.trim(),
+      address: formState.address.trim(),
       phoneNumber: formState.phoneNumber.trim(),
+      dateOfBirth: formState.dateOfBirth || null,
       university: formState.university.trim(),
       major: formState.major.trim(),
       status: formState.status,
@@ -145,8 +149,8 @@ function StudentsPage() {
         lastName: nextStudent.lastName,
         email: nextStudent.email,
         phoneNumber: nextStudent.phoneNumber,
-        address: '',
-        dateOfBirth: null,
+        address: nextStudent.address,
+        dateOfBirth: nextStudent.dateOfBirth,
         universityAffiliation: nextStudent.university,
         majorFieldOfStudy: nextStudent.major,
         studentStatus: nextStudent.status,
@@ -157,7 +161,9 @@ function StudentsPage() {
         firstName: '',
         lastName: '',
         email: '',
+        address: '',
         phoneNumber: '',
+        dateOfBirth: '',
         university: '',
         major: '',
         status: 'undergraduate',
@@ -215,12 +221,34 @@ function StudentsPage() {
         />
         <input
           className="input"
+          placeholder="Address"
+          value={formState.address}
+          onChange={(event) =>
+            setFormState((previous) => ({
+              ...previous,
+              address: event.target.value,
+            }))
+          }
+        />
+        <input
+          className="input"
           placeholder="Phone number (10 digits or +91XXXXXXXXXX)"
           value={formState.phoneNumber}
           onChange={(event) =>
             setFormState((previous) => ({
               ...previous,
               phoneNumber: event.target.value,
+            }))
+          }
+        />
+        <input
+          className="input"
+          type="date"
+          value={formState.dateOfBirth}
+          onChange={(event) =>
+            setFormState((previous) => ({
+              ...previous,
+              dateOfBirth: event.target.value,
             }))
           }
         />
@@ -285,8 +313,7 @@ function StudentsPage() {
           <option value="2nd Year">2nd Year</option>
           <option value="3rd Year">3rd Year</option>
           <option value="4th Year">4th Year</option>
-          <option value="1st Sem">1st Sem</option>
-          <option value="2nd Sem">2nd Sem</option>
+          <option value="5th Year">5th Year</option>
         </select>
         {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
 

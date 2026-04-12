@@ -10,7 +10,10 @@ function EmployeesPage() {
     firstName: '',
     lastName: '',
     role: 'support',
+    gender: '',
+    salary: '',
     email: '',
+    address: '',
     phone: '',
     aadhaar: '',
   })
@@ -101,15 +104,22 @@ function EmployeesPage() {
       return
     }
 
+    if (formState.salary && Number.isNaN(Number(formState.salary))) {
+      setActionMessage('Salary must be a valid number')
+      setActionType('error')
+      return
+    }
+
     const nextEmployee = {
       id: `E${5000 + employees.length + 1}`,
       firstName: formState.firstName.trim(),
       lastName: formState.lastName.trim(),
       role: formState.role,
-      gender: 'Not specified',
-      salary: 0,
+      gender: formState.gender.trim() || 'Not specified',
+      salary: Number(formState.salary || 0),
       aadhaar: formState.aadhaar.trim(),
       email: formState.email.trim(),
+      address: formState.address.trim(),
       phone: formState.phone.trim(),
     }
 
@@ -126,12 +136,22 @@ function EmployeesPage() {
         salary: nextEmployee.salary,
         aadhaarNumber: nextEmployee.aadhaar,
         email: nextEmployee.email,
-        address: '',
+        address: nextEmployee.address,
         telephoneNumber: nextEmployee.phone,
         role: nextEmployee.role,
       })
       await reloadEmployees()
-      setFormState({ firstName: '', lastName: '', role: 'support', email: '', phone: '', aadhaar: '' })
+      setFormState({
+        firstName: '',
+        lastName: '',
+        role: 'support',
+        gender: '',
+        salary: '',
+        email: '',
+        address: '',
+        phone: '',
+        aadhaar: '',
+      })
       setActionMessage('Employee added successfully')
       setActionType('success')
     } catch (error) {
@@ -181,6 +201,42 @@ function EmployeesPage() {
                 setFormState((previous) => ({
                   ...previous,
                   email: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Gender"
+              value={formState.gender}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  gender: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              type="number"
+              min="0"
+              step="0.01"
+              placeholder="Salary"
+              value={formState.salary}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  salary: event.target.value,
+                }))
+              }
+            />
+            <input
+              className="input"
+              placeholder="Address"
+              value={formState.address}
+              onChange={(event) =>
+                setFormState((previous) => ({
+                  ...previous,
+                  address: event.target.value,
                 }))
               }
             />
