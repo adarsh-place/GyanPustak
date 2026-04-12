@@ -122,6 +122,17 @@ CREATE TABLE IF NOT EXISTS course_books (
   PRIMARY KEY (course_id, book_id)
 );
 
+CREATE TABLE IF NOT EXISTS book_reviews (
+  id TEXT PRIMARY KEY,
+  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  review_text TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (book_id, student_id)
+);
+
 CREATE TABLE IF NOT EXISTS trouble_tickets (
   id TEXT PRIMARY KEY,
   category TEXT NOT NULL CHECK (category IN ('user profile', 'products', 'cart', 'orders', 'other')),

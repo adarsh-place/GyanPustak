@@ -140,4 +140,18 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
+  getBookReviews(bookId) {
+    return request(`/reviews/book/${bookId}`)
+  },
+  createReview(payload) {
+    return request('/reviews/add', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  deleteReview(reviewId) {
+    return request(`/reviews/${reviewId}`, {
+      method: 'DELETE',
+    })
+  },
 }

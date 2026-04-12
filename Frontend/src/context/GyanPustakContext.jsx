@@ -206,15 +206,7 @@ export function GyanPustakProvider({ children }) {
   const [error, setError] = useState('')
   const [isCheckingAuth] = useState(false)
 
-  const primaryStudent = students[0] || {
-    id: 'S1001',
-    firstName: 'Aarav',
-    lastName: 'Sharma',
-    university: 'National Tech University',
-    major: 'Computer Science',
-    status: 'undergraduate',
-    yearOfStudy: '3rd Year',
-  }
+  const primaryStudent = students[0];
 
   const loadData = useCallback(async () => {
     setIsLoading(true)

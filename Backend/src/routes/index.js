@@ -7,6 +7,7 @@ import { employeesRouter } from './employees.js'
 import { healthRouter } from './health.js'
 import { instructorsRouter } from './instructors.js'
 import { ordersRouter } from './orders.js'
+import { reviewsRouter } from './reviews.js'
 import { studentsRouter } from './students.js'
 import { ticketsRouter } from './tickets.js'
 import { universitiesRouter } from './universities.js'
@@ -24,5 +25,6 @@ apiRouter.use('/courses', coursesRouter)
 apiRouter.use('/students', studentsRouter)
 apiRouter.use('/employees', employeesRouter)
 apiRouter.use('/tickets', ticketsRouter)
+apiRouter.use('/reviews', reviewsRouter)
 apiRouter.use('/carts', cartRouter)
 apiRouter.use('/orders', ordersRouter)
