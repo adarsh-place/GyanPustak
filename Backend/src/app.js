@@ -14,12 +14,7 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .filter(Boolean)
 
 app.use(helmet())
-app.use(
-  cors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
-    credentials: true,
-  }),
-)
+app.use(cors());
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
