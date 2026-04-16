@@ -6,6 +6,7 @@ import { HttpError } from '../utils/httpError.js'
 
 export const authRouter = Router()
 const LOGIN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
+const VALID_ROLES = new Set(['student', 'support', 'admin', 'superadmin'])
 
 function generateStudentId() {
   return `S${Date.now()}${Math.floor(100 + Math.random() * 900)}`
@@ -21,6 +22,65 @@ function isValidPhone(phone) {
   const plusFormat = /^\+91\d{10}$/
   const plainFormat = /^\d{10}$/
   return plusFormat.test(cleaned) || plainFormat.test(cleaned)
+}
+
+function clearAuthCookies(response) {
+  response.clearCookie('auth_user_id')
+  response.clearCookie('auth_role')
+}
+
+async function resolveAuthSession(request, response) {
+  const userId = request.cookies.auth_user_id
+  const role = request.cookies.auth_role
+
+  if (!userId || !role) {
+    return {
+      authenticated: false,
+      userId: null,
+      role: null,
+    }
+  }
+
+  const normalizedRole = String(role).toLowerCase().trim()
+  if (!VALID_ROLES.has(normalizedRole)) {
+    clearAuthCookies(response)
+    return {
+      authenticated: false,
+      userId: null,
+      role: null,
+    }
+  }
+
+  if (normalizedRole === 'student') {
+    const result = await pool.query('SELECT id FROM students WHERE id = $1', [userId])
+    if (result.rowCount === 0) {
+      clearAuthCookies(response)
+      return {
+        authenticated: false,
+        userId: null,
+        role: null,
+      }
+    }
+  } else {
+    const result = await pool.query('SELECT id FROM employees WHERE id = $1 AND role = $2', [
+      userId,
+      normalizedRole,
+    ])
+    if (result.rowCount === 0) {
+      clearAuthCookies(response)
+      return {
+        authenticated: false,
+        userId: null,
+        role: null,
+      }
+    }
+  }
+
+  return {
+    authenticated: true,
+    userId,
+    role: normalizedRole,
+  }
 }
 
 authRouter.post(
@@ -152,6 +212,14 @@ authRouter.get(
   asyncHandler(async (request, response) => {
     const result = await pool.query('SELECT id, name FROM universities ORDER BY name ASC')
     response.json({ success: true, data: result.rows })
+  }),
+)
+
+authRouter.get(
+  '/session',
+  asyncHandler(async (request, response) => {
+    const session = await resolveAuthSession(request, response)
+    response.json({ success: true, data: session })
   }),
 )
 

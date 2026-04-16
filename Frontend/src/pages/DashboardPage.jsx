@@ -45,13 +45,19 @@ function DashboardPage() {
 
           <article className="card">
             <h3>Student Profile</h3>
-            <p>
-              {student.firstName.toUpperCase()} {student.lastName.toUpperCase()}
-            </p>
-            <p>• {student.university}</p>
-            <p>
-              • {student.yearOfStudy} {student.major} ({student.status})
-            </p>
+            {student ? (
+              <>
+                <p>
+                  {student.firstName?.toUpperCase()} {student.lastName?.toUpperCase()}
+                </p>
+                <p>• {student.university}</p>
+                <p>
+                  • {student.yearOfStudy} {student.major} ({student.status})
+                </p>
+              </>
+            ) : (
+              <p>Loading student profile...</p>
+            )}
           </article>
         </>
       ) : (

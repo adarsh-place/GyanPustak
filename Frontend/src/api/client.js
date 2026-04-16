@@ -42,6 +42,9 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
+  getSession() {
+    return request('/auth/session')
+  },
   logout() {
     return request('/auth/logout', {
       method: 'POST',
@@ -49,6 +52,9 @@ export const apiClient = {
   },
   getBooks() {
     return request(`/books`)
+  },
+  getBookById(bookId) {
+    return request(`/books/${bookId}`)
   },
   createBook(payload) {
     return request('/books/add', {

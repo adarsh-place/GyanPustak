@@ -2,6 +2,7 @@ import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-do
 import { roles } from './data/mockData'
 import { GyanPustakProvider, useGyanPustak } from './context/GyanPustakContext'
 import LoadingBlock from './components/LoadingBlock'
+import BookDetailsPage from './pages/BookDetailsPage'
 import BooksPage from './pages/BooksPage'
 import CartPage from './pages/CartPage'
 import CoursesPage from './pages/CoursesPage'
@@ -122,6 +123,7 @@ function AppContent() {
               <>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/books" element={<BooksPage />} />
+                <Route path="/books/:id" element={<BookDetailsPage />} />
                 <Route path="/universities" element={<UniversitiesPage />} />
                 <Route path="/courses" element={<CoursesPage />} />
                 <Route path="/instructors" element={<InstructorsPage />} />
