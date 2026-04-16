@@ -7,6 +7,7 @@ function resolveBaseUrl() {
 
 async function request(path, options = {}) {
   const response = await fetch(`${resolveBaseUrl()}${path}`, {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),
@@ -26,6 +27,15 @@ async function request(path, options = {}) {
 }
 
 export const apiClient = {
+  getSignupUniversities() {
+    return request('/auth/signup/universities')
+  },
+  signupStudent(payload) {
+    return request('/auth/signup/student', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
   login(payload) {
     return request('/auth/login', {
       method: 'POST',

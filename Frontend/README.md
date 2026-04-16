@@ -42,10 +42,11 @@ Configured in App.jsx:
 - /students (support, admin, superadmin)
 - /employees
 - /login
+- /signup
 
 If not authenticated:
 
-- Only login route is available
+- Login and signup routes are available
 - All other paths redirect to /login
 
 ## 4. Global State Layer
@@ -103,13 +104,21 @@ Exposed API methods cover:
 - Client-side required field checks
 - Calls loginAsRole and transitions into authenticated app
 
-### 6.2 DashboardPage
+### 6.2 SignupPage
+
+- Public student registration form
+- Captures all student attributes required by students table
+- Loads university options using public auth signup API
+- Validates email, phone, password, and confirm-password match
+- Shows status messages and redirects to login on success
+
+### 6.3 DashboardPage
 
 - Shows current role
 - Student: ticket count, order count, profile card
 - Staff: ticket and employee summary blocks
 
-### 6.3 BooksPage
+### 6.4 BooksPage
 
 Student features:
 
@@ -131,28 +140,28 @@ Admin and superadmin features:
   - category/subcategories
   - publication and pricing fields
 
-### 6.4 UniversitiesPage
+### 6.5 UniversitiesPage
 
 - List universities and departments
 - Admin/superadmin can add universities
 - Admin/superadmin can add departments under selected university
 - Email and phone validation for representative fields
 
-### 6.5 CoursesPage
+### 6.6 CoursesPage
 
 - List courses with filters by university and instructor
 - Admin/superadmin can add courses
 - Supports selecting departments and instructors by university
 - Supports attaching books as required/recommended
 
-### 6.6 InstructorsPage
+### 6.7 InstructorsPage
 
 - List instructors with university and department
 - Filter by university
 - Admin/superadmin can add instructor
 - Department selection is optional but university-bound
 
-### 6.7 TicketsPage
+### 6.8 TicketsPage
 
 - Student/support can create tickets
 - Status filtering UI
@@ -161,7 +170,7 @@ Admin and superadmin features:
 - Requires solution text before completion transition
 - Timeline view for status history with actor names
 
-### 6.8 CartPage
+### 6.9 CartPage
 
 - Student-only checkout page
 - Displays cart items and selected purchase option
@@ -170,20 +179,20 @@ Admin and superadmin features:
 - Checkout with shipping + card detail validation
 - Places order from cart via backend API
 
-### 6.9 OrdersPage
+### 6.10 OrdersPage
 
 - Student order list
 - Displays status, shipping, card summary, and item IDs
 - Allows cancellation unless shipped/canceled
 
-### 6.10 StudentsPage
+### 6.11 StudentsPage
 
 - Staff/admin view of student list with university filter
 - Admin/superadmin can add student
 - Validates email and phone format
 - University choices loaded from backend
 
-### 6.11 EmployeesPage
+### 6.12 EmployeesPage
 
 - Employee listing with role filter
 - Superadmin can add employee

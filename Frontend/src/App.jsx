@@ -10,6 +10,7 @@ import EmployeesPage from './pages/EmployeesPage'
 import InstructorsPage from './pages/InstructorsPage'
 import LoginPage from './pages/LoginPage'
 import OrdersPage from './pages/OrdersPage'
+import SignupPage from './pages/SignupPage'
 import StudentsPage from './pages/StudentsPage'
 import TicketsPage from './pages/TicketsPage'
 import UniversitiesPage from './pages/UniversitiesPage'
@@ -109,6 +110,7 @@ function AppContent() {
             {!isAuthenticated ? (
               <>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
               </>
             ) : isLoading ? (

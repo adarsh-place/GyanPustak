@@ -41,12 +41,6 @@ function DashboardPage() {
               <h3>My Orders</h3>
               <p>{orderCount}</p>
             </article>
-            <article className="card">
-              <h3>My Profile</h3>
-              <p>
-                {student.firstName.toUpperCase()} {student.lastName.toUpperCase()}
-              </p>
-            </article>
           </div>
 
           <article className="card">

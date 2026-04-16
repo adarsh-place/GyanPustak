@@ -8,7 +8,7 @@
 
 .login-page .login-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 660px;
   padding: 28px;
   border-radius: 18px;
   border: 1px solid rgba(148, 163, 184, 0.28);
@@ -97,10 +97,26 @@
   transform: translateY(-1px);
 }
 
-.login-page .status-message.error {
+.login-page .status-message {
   border-radius: 12px;
   padding: 12px 14px;
   font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.login-page .status-message.info {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.login-page .status-message.success {
+  border-color: #86efac;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.login-page .status-message.error {
   border: 1px solid #fca5a5;
   background: #fee2e2;
   color: #991b1b;

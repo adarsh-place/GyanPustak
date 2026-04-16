@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { roles } from '../data/mockData'
 import { useGyanPustak } from '../context/GyanPustakContext'
 import './LoginPage.css'
@@ -91,6 +92,10 @@ function LoginPage() {
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
+        <p style={{marginTop: '12px', textAlign: 'center' }}>
+          New student? <Link style={{color:'blue'}} to="/signup">Create account</Link>
+        </p>
       </article>
     </section>
   )

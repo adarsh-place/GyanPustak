@@ -17,6 +17,17 @@ function readCookieValue(name) {
   return ''
 }
 
+function readAuthSession() {
+  const userId = readCookieValue('auth_user_id')
+  const role = readCookieValue('auth_role')
+
+  if (!userId || !role) {
+    return { isAuthenticated: false, role: 'student' }
+  }
+
+  return { isAuthenticated: true, role }
+}
+
 function toDisplayDate(value) {
   if (!value) {
     return ''
@@ -191,8 +202,8 @@ function getErrorMessage(error) {
 }
 
 export function GyanPustakProvider({ children }) {
-  const [activeRole, setActiveRole] = useState(() => readCookieValue('auth_role') || 'student')
-  const [isAuthenticated, setIsAuthenticated] = useState(() => Boolean(readCookieValue('auth_role')))
+  const [activeRole, setActiveRole] = useState(() => readAuthSession().role)
+  const [isAuthenticated, setIsAuthenticated] = useState(() => readAuthSession().isAuthenticated)
   const [books, setBooks] = useState([])
   const [universities, setUniversities] = useState([])
   const [courses, setCourses] = useState([])
@@ -247,7 +258,13 @@ export function GyanPustakProvider({ children }) {
         setOrders([])
       }
     } catch (fetchError) {
-      setError(getErrorMessage(fetchError))
+      const message = getErrorMessage(fetchError)
+      setError(message)
+
+      if (message.toLowerCase().includes('authentication required')) {
+        setIsAuthenticated(false)
+        setActiveRole('student')
+      }
     } finally {
       setIsLoading(false)
     }

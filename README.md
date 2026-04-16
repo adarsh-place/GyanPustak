@@ -12,6 +12,7 @@ This root README gives a complete project-level view. For implementation-level d
 The platform models a university textbook ecosystem where:
 
 - Students can browse books, add items to cart, place orders, raise support tickets, and write reviews.
+- New students can self-register from the signup page using full student profile attributes.
 - Support staff can create and assign tickets.
 - Admin and superadmin can manage universities, departments, instructors, courses, and books.
 - Superadmin can additionally manage employees.
@@ -111,6 +112,14 @@ Superadmin
 2. Backend validates user credentials from students or employees table.
 3. Backend sets auth_user_id and auth_role cookies.
 4. Frontend context loads all relevant datasets.
+
+### Student signup flow
+
+1. Unauthenticated user opens the signup page.
+2. Frontend fetches university options from public signup-universities endpoint.
+3. User submits all student profile fields plus password and confirm password.
+4. Backend validates the payload and password match, creates student, hashes password, and creates a cart.
+5. Frontend shows success message and redirects user to login.
 
 ### Book purchase flow
 

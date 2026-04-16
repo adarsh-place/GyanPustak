@@ -114,6 +114,15 @@ All other modules require auth middleware:
 
 File: src/routes/auth.js
 
+- GET /api/auth/signup/universities
+  - Public endpoint used by signup UI to load university options
+  - Returns university id and name list
+- POST /api/auth/signup/student
+  - Public student registration endpoint
+  - Accepts student profile fields with password and confirmPassword
+  - Validates required fields and password match
+  - Hashes password and stores in students.password_hash
+  - Creates linked cart row in the same transaction
 - POST /api/auth/login
   - Input: email, password, role
   - Role-specific lookup:
