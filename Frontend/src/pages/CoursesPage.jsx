@@ -362,35 +362,47 @@ function CoursesPage() {
           <p>No courses found.</p>
         </article>
       ) : (
-        <div className="stack">
-          <p>Courses ({filteredCourses.length})</p>
+        <div className="courses-grid">
+          <p className="courses-count">Courses ({filteredCourses.length})</p>
           {filteredCourses.map((course) => (
-            <article key={course.id} className="card">
-              <div className="card-header">
-                <h3>
-                  {course.id} - {course.name}
-                </h3>
-                <span className="badge">{course.year} | {course.semester}</span>
+            <article key={course.id} className="card course-card">
+              <div className="course-card-header">
+                <div>
+                  <p className="course-id">{course.id}</p>
+                  <h3 className="course-title">{course.name}</h3>
+                </div>
+                <span className="course-badge">
+                  {course.year} | {course.semester}
+                </span>
               </div>
-              <p>University: {course.university}</p>
-              <p>
-                Departments: {course.departments.length > 0 ? course.departments.join(', ') : 'N/A'}
-              </p>
-              <p>
-                Instructors: {course.instructors.length > 0 ? course.instructors.join(', ') : 'N/A'}
-              </p>
-              <div>
-                <p>Books:</p>
+              <div className="course-meta-grid">
+                <div className="course-meta-item">
+                  <span className="course-meta-label">University</span>
+                  <span className="course-meta-value">{course.university}</span>
+                </div>
+                <div className="course-meta-item">
+                  <span className="course-meta-label">Departments</span>
+                  <span className="course-meta-value">{course.departments.length > 0 ? course.departments.join(', ') : 'N/A'}</span>
+                </div>
+                <div className="course-meta-item">
+                  <span className="course-meta-label">Instructors</span>
+                  <span className="course-meta-value">{course.instructors.length > 0 ? course.instructors.join(', ') : 'N/A'}</span>
+                </div>
+              </div>
+
+              <div className="course-books-section">
+                <p className="course-section-title">Books</p>
                 {course.books.length > 0 ? (
-                  <ul>
+                  <ul className="course-books-list">
                     {course.books.map((book) => (
-                      <li key={book.bookId}>
-                        {book.title} ({book.relation})
+                      <li key={book.bookId} className={`course-book-item ${book.relation}`}>
+                        <span className="course-book-title">{book.title}</span>
+                        <span className={`course-book-relation ${book.relation}`}>{book.relation}</span>
                       </li>
                     ))}
                   </ul>
                 ) : (
-                  <p>N/A</p>
+                  <p className="course-empty-books">No books assigned yet.</p>
                 )}
               </div>
             </article>

@@ -164,10 +164,15 @@ function TicketsPage() {
 
   return (
     <section className="section-stack tickets-page">
-      <h2>Trouble Tickets</h2>
+      <div className="tickets-header">
+        <div>
+          <h2>Trouble Tickets</h2>
+          <p className="page-eyebrow">Support Desk</p>
+        </div>
+      </div>
 
       {canCreateTickets && (
-        <form className="card form" onSubmit={submitTicket}>
+        <form className="card form ticket-form-card" onSubmit={submitTicket}>
           <h3>Create Ticket</h3>
           <select
             className="input"
@@ -210,7 +215,7 @@ function TicketsPage() {
 
       {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
 
-      <div className="card form">
+      <div className="card form ticket-filter-card">
         <h3>Filter by Status</h3>
         <select
           className="input"
@@ -226,8 +231,8 @@ function TicketsPage() {
         </select>
       </div>
 
-      <p>{activeRole === 'student' ? 'My' : 'All'} Tickets ({visibleTickets.length})</p>
-      <div className="stack">
+      <p className="tickets-count">{activeRole === 'student' ? 'My' : 'All'} Tickets ({visibleTickets.length})</p>
+      <div className="tickets-stack">
         {visibleTickets.map((ticket) => {
           const supportCanAssign = activeRole === 'support' && ticket.status === 'new'
           const adminCanProgress =
@@ -235,26 +240,50 @@ function TicketsPage() {
             ['assigned', 'in-process'].includes(ticket.status)
 
           return (
-            <article key={ticket.id} className="card">
-              <div className="card-header">
-                <h3>
-                  {ticket.id} • {ticket.title}
-                </h3>
-                <span className="badge">{ticket.status}</span>
+            <article key={ticket.id} className="card ticket-card">
+              <div className="ticket-card-header">
+                <div>
+                  <p className="ticket-id">{ticket.id}</p>
+                  <h3 className="ticket-title">{ticket.title}</h3>
+                </div>
+                <span className={`ticket-badge ${ticket.status}`}>{ticket.status}</span>
               </div>
-              <p>
-                Category: {ticket.category} | Logged: {ticket.loggedDate} | Created by:{' '}
-                {formatRole(ticket.createdBy)} ({ticket.createdByName || ticket.createdById || 'N/A'})
-              </p>
-              <p>{ticket.problemDescription}</p>
-              {ticket.solutionDescription && <p>Solution: {ticket.solutionDescription}</p>}
-              {ticket.resolvedBy && (
-                <p>
-                  Resolved by: {ticket.resolvedByName || ticket.resolvedBy}
-                </p>
+              <div className="ticket-meta-grid">
+                <div className="ticket-meta-item">
+                  <span className="ticket-meta-label">Category</span>
+                  <span className="ticket-meta-value">{ticket.category}</span>
+                </div>
+                <div className="ticket-meta-item">
+                  <span className="ticket-meta-label">Logged</span>
+                  <span className="ticket-meta-value">{ticket.loggedDate || 'N/A'}</span>
+                </div>
+                <div className="ticket-meta-item">
+                  <span className="ticket-meta-label">Created by</span>
+                  <span className="ticket-meta-value">
+                    {formatRole(ticket.createdBy)} ({ticket.createdByName || ticket.createdById || 'N/A'})
+                  </span>
+                </div>
+              </div>
+
+              <div className="ticket-description-block">
+                <p className="ticket-description-label">Problem</p>
+                <p className="ticket-description-text">{ticket.problemDescription}</p>
+              </div>
+
+              {ticket.solutionDescription && (
+                <div className="ticket-description-block solution">
+                  <p className="ticket-description-label">Solution</p>
+                  <p className="ticket-description-text">{ticket.solutionDescription}</p>
+                </div>
               )}
 
-              <div className="inline-actions">
+              {ticket.resolvedBy && (
+                <div className="ticket-resolved-chip">
+                  Resolved by {ticket.resolvedByName || ticket.resolvedBy}
+                </div>
+              )}
+
+              <div className="ticket-actions">
                 {supportCanAssign && (
                   <button className="button" onClick={() => assignTicket(ticket.id)} disabled={isActionLoading}>
                     Assign to Admin
@@ -263,7 +292,7 @@ function TicketsPage() {
 
                 {adminCanProgress && ticket.status === 'in-process' && (
                   <textarea
-                    className="input"
+                    className="input ticket-solution-input"
                     rows={3}
                     placeholder="Enter solution before marking completed"
                     value={solutionInputs[ticket.id] || ''}
@@ -279,7 +308,7 @@ function TicketsPage() {
                   </button>
                 )}
               </div>
-              
+
               <button
                 className="show-history-link"
                 onClick={() => toggleTicketHistory(ticket.id)}

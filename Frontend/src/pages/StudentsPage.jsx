@@ -182,9 +182,14 @@ function StudentsPage() {
 
   return (
     <section className="section-stack students-page">
-      <h2>{canManageStudents ? 'Student Management' : 'Students'}</h2>
+      <div className="students-header">
+        <div>
+          <h2>{canManageStudents ? 'Student Management' : 'Students'}</h2>
+          { canManageStudents && <p className="page-eyebrow">Academic Registry</p>}
+        </div>
+      </div>
 
-      {canManageStudents && <form className="card form" onSubmit={submitStudent}>
+      {canManageStudents && <form className="card form student-form-card" onSubmit={submitStudent}>
         <h3>Add New Student</h3>
         <input
           className="input"
@@ -322,7 +327,7 @@ function StudentsPage() {
         </button>
       </form>}
 
-      <article className="card form">
+      <article className="card form student-filter-card">
         <h3>Filter Students</h3>
         <select
           className="input"
@@ -344,26 +349,46 @@ function StudentsPage() {
         </select>
       </article>
 
-      <h3 style={{ marginTop: '20px' }}>All Students ({filteredStudents.length})</h3>
-      <div className="stack">
+      <p className="students-count">All Students ({filteredStudents.length})</p>
+      <div className="students-grid">
         {filteredStudents.length === 0 ? (
           <article className="card">
             <p>No students found.</p>
           </article>
         ) : (
           filteredStudents.map((student) => (
-            <article key={student.id} className="card">
-              <h4>
-                {student.id} - {student.firstName} {student.lastName}
-              </h4>
-              <p>Email: {student.email}</p>
-              <p>Phone: {student.phoneNumber || 'N/A'}</p>
-              <p>
-                University: {student.universityName || student.university} | Major: {student.major}
-              </p>
-              <p>
-                Status: {student.status} | Year: {student.yearOfStudy}
-              </p>
+            <article key={student.id} className="card student-card">
+              <div className="student-card-header">
+                <div>
+                  <p className="student-id">{student.id}</p>
+                  <h4 className="student-name">
+                    {student.firstName} {student.lastName}
+                  </h4>
+                </div>
+                <span className="student-badge">{student.status}</span>
+              </div>
+              <div className="student-meta-grid">
+                <div className="student-meta-item">
+                  <span className="student-meta-label">Email</span>
+                  <span className="student-meta-value">{student.email}</span>
+                </div>
+                <div className="student-meta-item">
+                  <span className="student-meta-label">Phone</span>
+                  <span className="student-meta-value">{student.phoneNumber || 'N/A'}</span>
+                </div>
+                <div className="student-meta-item">
+                  <span className="student-meta-label">University</span>
+                  <span className="student-meta-value">{student.universityName || student.university}</span>
+                </div>
+                <div className="student-meta-item">
+                  <span className="student-meta-label">Major</span>
+                  <span className="student-meta-value">{student.major}</span>
+                </div>
+                <div className="student-meta-item">
+                  <span className="student-meta-label">Year</span>
+                  <span className="student-meta-value">{student.yearOfStudy}</span>
+                </div>
+              </div>
             </article>
           ))
         )}

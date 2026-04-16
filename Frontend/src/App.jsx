@@ -1,6 +1,7 @@
 import { BrowserRouter, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { roles } from './data/mockData'
 import { GyanPustakProvider, useGyanPustak } from './context/GyanPustakContext'
+import './App.css'
 import LoadingBlock from './components/LoadingBlock'
 import BookDetailsPage from './pages/BookDetailsPage'
 import BooksPage from './pages/BooksPage'
@@ -15,6 +16,7 @@ import SignupPage from './pages/SignupPage'
 import StudentsPage from './pages/StudentsPage'
 import TicketsPage from './pages/TicketsPage'
 import UniversitiesPage from './pages/UniversitiesPage'
+import './App.css'
 
 const visibleNavLinks = [
   { to: '/', label: 'Dashboard' },
@@ -84,7 +86,7 @@ function AppContent() {
             <div className="role-pill-wrap">
               {/* <p className="role-pill-label">Role</p>  */}
               <p className="role-pill-value">{roleLabel}</p>
-              <button className="button button-secondary" onClick={logout} type="button">
+              <button className="button button-secondary logout-button" onClick={logout} type="button">
                 Logout
               </button>
             </div>

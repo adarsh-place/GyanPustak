@@ -165,11 +165,15 @@ function EmployeesPage() {
 
   return (
     <section className="section-stack employees-page">
-
       {activeRole === "superadmin" ? (
         <>
-          <h2>Employee Management</h2>
-          <form className="card form" onSubmit={submitEmployee}>
+          <div className="employees-header">
+            <div>
+              <h2>Employee Management</h2>
+            </div>
+          </div>
+
+          <form className="card form employee-form-card" onSubmit={submitEmployee}>
             <h3>Add Employee</h3>
             <input
               className="input"
@@ -283,10 +287,12 @@ function EmployeesPage() {
           </form>
         </>
       ) : (
+        <div className="employees-header">
           <h2>Employees</h2>
+        </div>
       )}
 
-      <article className="card form">
+      <article className="card form employee-filter-card">
         <h3>Filter Employees</h3>
         <select
           className="input"
@@ -299,18 +305,37 @@ function EmployeesPage() {
         </select>
       </article>
 
-      <div className="stack">
-        <p>All Employees ({filteredEmployees.length})</p>
+      <p className="employees-count">All Employees ({filteredEmployees.length})</p>
+      <div className="employees-grid">
         {filteredEmployees.map((employee) => (
-          <article key={employee.id} className="card">
-            <div className="card-header">
-              <h3>
-                {employee.id} - {employee.firstName} {employee.lastName}
-              </h3>
-              <span className="badge">{employee.role}</span>
+          <article key={employee.id} className="card employee-card">
+            <div className="employee-card-header">
+              <div>
+                <p className="employee-id">{employee.id}</p>
+                <h3 className="employee-name">
+                  {employee.firstName} {employee.lastName}
+                </h3>
+              </div>
+              <span className="employee-badge">{employee.role}</span>
             </div>
-            <p>Email: {employee.email}</p>
-            <p>Phone: {employee.phone}</p>
+            <div className="employee-meta-grid">
+              <div className="employee-meta-item">
+                <span className="employee-meta-label">Email</span>
+                <span className="employee-meta-value">{employee.email}</span>
+              </div>
+              <div className="employee-meta-item">
+                <span className="employee-meta-label">Phone</span>
+                <span className="employee-meta-value">{employee.phone || 'N/A'}</span>
+              </div>
+              <div className="employee-meta-item">
+                <span className="employee-meta-label">Gender</span>
+                <span className="employee-meta-value">{employee.gender || 'Not specified'}</span>
+              </div>
+              <div className="employee-meta-item">
+                <span className="employee-meta-label">Salary</span>
+                <span className="employee-meta-value">{employee.salary}</span>
+              </div>
+            </div>
           </article>
         ))}
       </div>

@@ -83,10 +83,14 @@ function InstructorsPage() {
 
   return (
     <section className="section-stack instructors-page">
-      <h2>{activeRole === 'student' ? 'Instructors' : 'Instructor Management'}</h2>
+      <div className="instructors-header">
+        <div>
+          <h2>{activeRole === 'student' ? 'Instructors' : 'Instructor Management'}</h2>
+        </div>
+      </div>
 
       {canAddInstructor && (
-        <form className="card form" onSubmit={submitInstructor}>
+        <form className="card form instructor-form-card" onSubmit={submitInstructor}>
           <h3>Add Instructor</h3>
           <select
             className="input"
@@ -149,8 +153,8 @@ function InstructorsPage() {
           ))}
         </select>
       </article>
-        
-      <p>Instructors ({filteredInstructors.length})</p>
+
+      <p className="instructors-count">Instructors ({filteredInstructors.length})</p>
     
       {error ? (
         <article className="card">
@@ -165,14 +169,28 @@ function InstructorsPage() {
           <p>No instructors found.</p>
         </article>
       ) : (
-        <div className="stack">
+        <div className="instructors-grid">
           {filteredInstructors.map((instructor) => (
-            <article key={instructor.id} className="card">
-              <h3>
-                {instructor.id} - {instructor.firstName} {instructor.lastName}
-              </h3>
-              <p>University: {instructor.universityName}</p>
-              <p>Department: {instructor.departmentName || 'N/A'}</p>
+            <article key={instructor.id} className="card instructor-card">
+              <div className="instructor-card-header">
+                <div>
+                  <p className="instructor-id">{instructor.id}</p>
+                  <h3 className="instructor-name">
+                    {instructor.firstName} {instructor.lastName}
+                  </h3>
+                </div>
+                <span className="instructor-badge">Instructor</span>
+              </div>
+              <div className="instructor-meta-grid">
+                <div className="instructor-meta-item">
+                  <span className="instructor-meta-label">University</span>
+                  <span className="instructor-meta-value">{instructor.universityName}</span>
+                </div>
+                <div className="instructor-meta-item">
+                  <span className="instructor-meta-label">Department</span>
+                  <span className="instructor-meta-value">{instructor.departmentName || 'N/A'}</span>
+                </div>
+              </div>
             </article>
           ))}
         </div>
