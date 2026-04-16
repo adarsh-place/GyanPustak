@@ -12,9 +12,11 @@ This root README gives a complete project-level view. For implementation-level d
 The platform models a university textbook ecosystem where:
 
 - Students can browse books, add items to cart, place orders, raise support tickets, and write reviews.
+- Students can update their own profile details from the dashboard.
 - New students can self-register from the signup page using full student profile attributes.
 - Support staff can create and assign tickets.
 - Admin and superadmin can manage universities, departments, instructors, courses, and books.
+- Employees can update their own profile details from the dashboard.
 - Superadmin can additionally manage employees.
 
 ## 2. Tech Stack
@@ -142,6 +144,12 @@ Superadmin
 3. One review per student per book is enforced in DB and API.
 4. Student can delete own review; admin/superadmin can moderate via delete endpoint.
 
+### Profile update workflow
+
+1. Student opens the dashboard and edits first name, last name, email, address, phone number, date of birth, university affiliation, major, and year of study.
+2. Employee opens the dashboard and edits first name, last name, gender, Aadhaar number, email, address, and phone number.
+3. Backend validates ownership and persists the update through the dedicated PATCH endpoints.
+
 ## 7. Local Development Setup
 
 ## Prerequisites
@@ -215,6 +223,7 @@ Frontend optional variables:
 
 - ID generation in several write routes uses Date.now() + random suffix patterns.
 - Credit card values are stored as plain text fields in current schema and should be tokenized/encrypted in production.
+- Student and employee dashboard profile updates are supported through authenticated PATCH routes.
 - There is no automated test suite yet in this repo.
 
 ## 13. Detailed Docs

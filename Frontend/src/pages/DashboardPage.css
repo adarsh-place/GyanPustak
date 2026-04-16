@@ -1,8 +1,230 @@
-.dashboard-page .grid-3 {
-  text-align: center;
+.dashboard-page {
+  width: 100%;
 }
 
-.dashboard-page .grid-3 p {
-  font-size: 1.2rem;
+.dashboard-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dashboard-header h2 {
+  font-size: clamp(22px, 2.5vw, 30px);
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.role-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d4ed8;
+  background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  padding: 6px 12px;
+  white-space: nowrap;
+}
+
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  border-radius: 14px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 8px 18px rgba(29, 78, 216, 0.08);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 45%, #0ea5e9 100%);
+}
+
+.stat-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+  letter-spacing: 0.03em;
+}
+
+.stat-value {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 800;
+  color: #1d4ed8;
+}
+
+.profile-card {
+  border-radius: 14px;
+  border: 1px solid #dbe3ef;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  gap: 14px;
+}
+
+.profile-title {
+  font-size: 18px;
+  color: #0f172a;
+  margin: 0;
+}
+
+.profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.edit-profile-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-name-section {
+  border: 1px dashed #bfdbfe;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.profile-name {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.profile-email {
+  margin: 0;
+  font-size: 13px;
+  color: #2563eb;
+  word-break: break-word;
+}
+
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.profile-detail {
+  border: 1px dashed #dbeafe;
+  background: #f8fbff;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.detail-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detail-value {
+  font-size: 13px;
   font-weight: 600;
+  color: #0f172a;
+}
+
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.form-actions .button {
+  flex: 1;
+}
+
+.dashboard-page .status-message {
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  margin-bottom: 12px;
+}
+
+.dashboard-page .status-message.info {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #93c5fd;
+}
+
+.dashboard-page .status-message.success {
+  background: #dcfce7;
+  color: #166534;
+  border-color: #86efac;
+}
+
+.dashboard-page .status-message.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border-color: #fca5a5;
+}
+
+@media (max-width: 700px) {
+  .dashboard-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stat-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-details-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
 }

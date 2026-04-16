@@ -116,16 +116,23 @@ function CartPage() {
 
   return (
     <section className="section-stack cart-page">
-      <h2>Shopping Cart</h2>
-      <article className="card">
-        <p>
-          Cart ID: {cart.id || 'N/A'} 
-          {/* | Date created: {cart.createdAt || 'N/A'}  */}
-        </p>
-        <p>
-          Last updated:{' '}
-          {cart.updatedAt || 'N/A'}
-        </p>
+      <div className="cart-header">
+        <h2>Shopping Cart</h2>
+        <div className="cart-header-meta">
+          <span className="cart-count-pill">{cartBooks.length} items</span>
+          <span className="cart-total-pill">Total: ₹{total}</span>
+        </div>
+      </div>
+
+      <article className="card cart-meta-card">
+        <div className="cart-meta-row">
+          <span className="meta-label">Cart ID</span>
+          <span className="meta-value">{cart.id || 'N/A'}</span>
+        </div>
+        <div className="cart-meta-row">
+          <span className="meta-label">Last Updated</span>
+          <span className="meta-value">{cart.updatedAt || 'N/A'}</span>
+        </div>
       </article>
 
       {cartBooks.length === 0 ? (
@@ -133,26 +140,28 @@ function CartPage() {
           <p>Your cart is currently empty.</p>
         </article>
       ) : (
-        <div className="stack">
-          {cartBooks.map((book) => (
-            <article key={book.id} className="card">
-              <div className="card-header">
-                <h3>{book.title}</h3>
-                {book.purchaseOption === 'buy' ? <span className="badge">₹{book.price}</span> : null}
-              </div>
-              <p>{book.format} • {book.type}</p>
-              <p>Option: {book.purchaseOption || 'buy'}</p>
-              <button className="button button-secondary" onClick={() => handleRemove(book.id)} disabled={isActionLoading}>
-                Remove
-              </button>
-            </article>
-          ))}
+        <div className="cart-layout">
+          <div className="cart-items-grid">
+            {cartBooks.map((book) => (
+              <article key={book.id} className="card cart-book-card">
+                <div className="card-header">
+                  <h3>{book.title}</h3>
+                  {book.purchaseOption === 'buy' ? <span className="badge">₹{book.price}</span> : null}
+                </div>
+                <p className="book-meta">{book.format} • {book.type}</p>
+                <p className="book-option">Option: {book.purchaseOption || 'buy'}</p>
+                <button className="button button-secondary" onClick={() => handleRemove(book.id)} disabled={isActionLoading}>
+                  Remove
+                </button>
+              </article>
+            ))}
+          </div>
 
-          {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
-          
-          <article className="card form">
-            <h3>Checkout</h3>
-            <p>Total amount: ₹{total}</p>
+          <article className="card form checkout-card">
+            <div className="checkout-header">
+              <h3>Checkout</h3>
+              <p className="checkout-total">₹{total}</p>
+            </div>
             <input
               className="input"
               placeholder="Card number"
@@ -164,17 +173,34 @@ function CartPage() {
                 }))
               }
             />
-            <input
-              className="input"
-              placeholder="Expiry date (MM/YY)"
-              value={paymentDetails.creditCardExpirationDate}
-              onChange={(event) =>
-                setPaymentDetails((previous) => ({
-                  ...previous,
-                  creditCardExpirationDate: event.target.value,
-                }))
-              }
-            />
+            <div className="inline-actions">
+              <input
+                className="input"
+                placeholder="Expiry date (MM/YY)"
+                value={paymentDetails.creditCardExpirationDate}
+                onChange={(event) =>
+                  setPaymentDetails((previous) => ({
+                    ...previous,
+                    creditCardExpirationDate: event.target.value,
+                  }))
+                }
+              />
+              <select
+                className="input"
+                value={paymentDetails.creditCardType}
+                onChange={(event) =>
+                  setPaymentDetails((previous) => ({
+                    ...previous,
+                    creditCardType: event.target.value,
+                  }))
+                }
+              >
+                <option value="Visa">Visa</option>
+                <option value="Mastercard">Mastercard</option>
+                <option value="RuPay">RuPay</option>
+                <option value="Amex">Amex</option>
+              </select>
+            </div>
             <input
               className="input"
               placeholder="Card holder name"
@@ -188,34 +214,21 @@ function CartPage() {
             />
             <select
               className="input"
-              value={paymentDetails.creditCardType}
-              onChange={(event) =>
-                setPaymentDetails((previous) => ({
-                  ...previous,
-                  creditCardType: event.target.value,
-                }))
-              }
-            >
-              <option value="Visa">Visa</option>
-              <option value="Mastercard">Mastercard</option>
-              <option value="RuPay">RuPay</option>
-              <option value="Amex">Amex</option>
-            </select>
-            <select
-              className="input"
               value={shippingType}
               onChange={(event) => setShippingType(event.target.value)}
             >
-              <option value="standard">standard</option>
-              <option value="2-day">2-day</option>
-              <option value="1-day">1-day</option>
+              <option value="standard">Standard shipping</option>
+              <option value="2-day">2-day shipping</option>
+              <option value="1-day">1-day shipping</option>
             </select>
-            <button className="button" onClick={handlePlaceOrder} disabled={isActionLoading}>
-              Place Order
+            <button className="button checkout-button" onClick={handlePlaceOrder} disabled={isActionLoading}>
+              {isActionLoading ? 'Processing...' : 'Place Order'}
             </button>
           </article>
         </div>
       )}
+
+      {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
     </section>
   )
 }

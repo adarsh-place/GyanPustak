@@ -1,3 +1,143 @@
+.universities-page {
+  width: 100%;
+}
+
+.universities-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.universities-header h2 {
+  font-size: clamp(22px, 2.5vw, 30px);
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.universities-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e40af;
+  background: linear-gradient(135deg, #dbeafe 0%, #c7d2fe 100%);
+  border: 1px solid #93c5fd;
+  border-radius: 999px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+
+.universities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.university-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.07);
+  gap: 12px;
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.university-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 45%, #0ea5e9 100%);
+}
+
+.university-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 24px rgba(30, 64, 175, 0.16);
+}
+
+.university-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.university-card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.department-count-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f766e;
+  background: #ccfbf1;
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  padding: 4px 9px;
+  white-space: nowrap;
+}
+
+.university-address {
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.university-representative {
+  border: 1px dashed #bfdbfe;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.representative-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #475569;
+}
+
+.representative-name {
+  font-size: 14px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.representative-contact {
+  font-size: 13px;
+  color: #2563eb;
+  word-break: break-word;
+}
+
+.department-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.department-chip {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3730a3;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+.department-empty {
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
 .universities-page .status-message {
   border-radius: 10px;
   padding: 12px 14px;
@@ -21,4 +161,15 @@
   background: #fee2e2;
   color: #991b1b;
   border-color: #fca5a5;
+}
+
+@media (max-width: 700px) {
+  .universities-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .universities-grid {
+    grid-template-columns: 1fr;
+  }
 }

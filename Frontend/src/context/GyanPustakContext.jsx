@@ -178,6 +178,7 @@ function getErrorMessage(error) {
 
 export function GyanPustakProvider({ children }) {
   const [activeRole, setActiveRole] = useState('student')
+  const [authUserId, setAuthUserId] = useState('')
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [books, setBooks] = useState([])
   const [universities, setUniversities] = useState([])
@@ -211,9 +212,11 @@ export function GyanPustakProvider({ children }) {
         if (session?.authenticated) {
           setIsAuthenticated(true)
           setActiveRole(session.role || 'student')
+          setAuthUserId(session.userId || '')
         } else {
           setIsAuthenticated(false)
           setActiveRole('student')
+          setAuthUserId('')
         }
       } catch (error) {
         if (!isMounted) {
@@ -222,6 +225,7 @@ export function GyanPustakProvider({ children }) {
 
         setIsAuthenticated(false)
         setActiveRole('student')
+        setAuthUserId('')
       } finally {
         if (isMounted) {
           setIsCheckingAuth(false)
@@ -299,6 +303,7 @@ export function GyanPustakProvider({ children }) {
   const loginAsRole = useCallback(async (credentials) => {
     const response = await apiClient.login(credentials)
     setActiveRole(response?.data?.role || credentials.role)
+    setAuthUserId(response?.data?.userId || '')
     setIsAuthenticated(true)
     setIsCheckingAuth(false)
   }, [])
@@ -311,6 +316,7 @@ export function GyanPustakProvider({ children }) {
     } finally {
       setIsAuthenticated(false)
       setActiveRole('student')
+      setAuthUserId('')
       setIsCheckingAuth(false)
     }
   }, [])
@@ -380,6 +386,7 @@ export function GyanPustakProvider({ children }) {
   const value = {
     isAuthenticated,
     activeRole,
+    authUserId,
     loginAsRole,
     logout,
     student: primaryStudent,

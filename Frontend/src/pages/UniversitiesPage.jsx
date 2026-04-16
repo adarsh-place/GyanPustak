@@ -141,7 +141,10 @@ function UniversitiesPage() {
 
   return (
     <section className="section-stack universities-page">
-      <h2>Universities and Departments</h2>
+      <div className="universities-header">
+        <h2>Universities and Departments</h2>
+        <p className="universities-count">{universities.length} listed</p>
+      </div>
 
       {canAddUniversity && (
         <form className="card form" onSubmit={submitUniversity}>
@@ -231,20 +234,41 @@ function UniversitiesPage() {
         </form>
       )}
 
-      <p>Universities ({universities.length})</p>
-      {universities.map((university) => (
-        <article key={university.id} className="card">
-          <h3>{university.name}</h3>
-          <p>{university.address}</p>
-          <p>
-            Representative: {university.representative.firstName} {university.representative.lastName}{' '}
-            ({university.representative.email})
-          </p>
-          <p>
-            Departments: {university.departments.map((department) => department.name).join(', ')}
-          </p>
-        </article>
-      ))}
+      <div className="universities-grid">
+        {universities.map((university) => (
+          <article key={university.id} className="card university-card">
+            <div className="university-card-header">
+              <h3>{university.name}</h3>
+              {/* <span className="department-count-badge">
+                {university.departments.length} departments
+              </span> */}
+            </div>
+
+            <p className="university-address">{university.address}</p>
+
+            <div className="university-representative">
+              <p className="representative-label">Representative</p>
+              <p className="representative-name">
+                {university.representative?.firstName} {university.representative?.lastName}
+              </p>
+              <p className="representative-contact">{university.representative?.email}</p>
+              <p className="representative-contact">{university.representative?.phone}</p>
+            </div>
+
+            <div className="department-chip-list">
+              {university.departments.length > 0 ? (
+                university.departments.map((department) => (
+                  <span key={department.id} className="department-chip">
+                    {department.name}
+                  </span>
+                ))
+              ) : (
+                <span className="department-empty">No departments added yet</span>
+              )}
+            </div>
+          </article>
+        ))}
+      </div>
 
     </section>
   )

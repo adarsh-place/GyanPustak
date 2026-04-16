@@ -156,6 +156,18 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
+  updateStudent(studentId, payload) {
+    return request(`/students/${studentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateEmployee(employeeId, payload) {
+    return request(`/employees/${employeeId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
   getBookReviews(bookId) {
     return request(`/reviews/book/${bookId}`)
   },

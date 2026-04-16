@@ -219,18 +219,29 @@ File: src/routes/students.js
   - Creates student with default hashed password
   - Also creates cart record for student
   - Uses transaction
+- PATCH /api/students/:studentId
+  - Student role can update only own profile
+  - Updates first name, last name, email, address, phone number, date of birth, university affiliation, major, year of study, and optional password
+  - Validates email, phone, university existence, and password length
 
 ### 8.8 Employees
 
 File: src/routes/employees.js
 
 - GET /api/employees
-  - Lists employees
+  - Superadmin sees all employees
+  - Support/admin see only their own employee record
 - POST /api/employees/add
   - Role: superadmin
   - Validates required fields including aadhaar number
   - Validates role in support/admin/superadmin
   - Creates employee with default hashed password
+- PATCH /api/employees/:employeeId
+  - Support/admin can update only their own employee profile
+  - Superadmin can update employee profiles
+  - Updates first name, last name, gender, Aadhaar number, email, address, phone number, and optional password
+  - Salary remains read-only for self-service edits and can only be changed by superadmin
+  - Validates email, phone, Aadhaar uniqueness, and password length
 
 ### 8.9 Tickets
 

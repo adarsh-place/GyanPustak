@@ -115,8 +115,11 @@ Exposed API methods cover:
 ### 6.3 DashboardPage
 
 - Shows current role
-- Student: ticket count, order count, profile card
-- Staff: ticket and employee summary blocks
+- Student: ticket count, order count, profile card, and editable student profile form
+- Staff: ticket and employee summary blocks, with editable employee profile form
+- Student profile edit supports first name, last name, email, address, phone number, date of birth, university affiliation, major field of study, and year of study
+- Employee profile edit supports first name, last name, gender, Aadhaar number, email, address, and phone number
+- Save actions call the authenticated PATCH endpoints and refresh the dashboard data after update
 
 ### 6.4 BooksPage
 
@@ -198,6 +201,11 @@ Admin and superadmin features:
 - Superadmin can add employee
 - Validates email, phone, Aadhaar, and salary formatting
 - Captures role, gender, salary, address, and identity fields
+
+### 6.13 Profile Update Behavior
+
+- Student dashboard edits are restricted to the authenticated student account
+- Employee dashboard edits are restricted to the authenticated employee account
 
 ## 7. Styling and UI Pattern Notes
 
