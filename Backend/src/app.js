@@ -14,7 +14,25 @@ const allowedOrigins = (process.env.CORS_ORIGIN || '')
   .filter(Boolean)
 
 app.use(helmet())
-app.use(cors());
+app.use(
+  cors({
+    origin(origin, callback) {
+      // Allow server-to-server tools and same-origin requests with no Origin header.
+      if (!origin) {
+        callback(null, true)
+        return
+      }
+
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+        callback(null, true)
+        return
+      }
+
+      callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true,
+  }),
+)
 app.use(express.json())
 app.use(cookieParser())
 app.use(morgan('dev'))
