@@ -18,6 +18,12 @@ async function request(path, options = {}) {
   const contentType = response.headers.get('content-type') || ''
   const payload = contentType.includes('application/json') ? await response.json() : null
 
+  if (response.ok && payload == null) {
+    throw new Error(
+      'Invalid API response. Check VITE_API_BASE_URL and backend CORS settings for deployed environments.',
+    )
+  }
+
   if (!response.ok) {
     const message = payload?.message || `Request failed with status ${response.status}`
     throw new Error(message)

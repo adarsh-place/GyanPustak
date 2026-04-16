@@ -8,6 +8,17 @@ export const authRouter = Router()
 const LOGIN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
 const VALID_ROLES = new Set(['student', 'support', 'admin', 'superadmin'])
 
+function getCookieOptions(httpOnly) {
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  return {
+    httpOnly,
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
+    maxAge: LOGIN_MAX_AGE_MS,
+  }
+}
+
 function generateStudentId() {
   return `S${Date.now()}${Math.floor(100 + Math.random() * 900)}`
 }
@@ -25,8 +36,8 @@ function isValidPhone(phone) {
 }
 
 function clearAuthCookies(response) {
-  response.clearCookie('auth_user_id')
-  response.clearCookie('auth_role')
+  response.clearCookie('auth_user_id', getCookieOptions(true))
+  response.clearCookie('auth_role', getCookieOptions(false))
 }
 
 async function resolveAuthSession(request, response) {
@@ -279,19 +290,8 @@ authRouter.post(
       throw new HttpError(401, 'Invalid password')
     }
 
-    response.cookie('auth_user_id', user.id, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: LOGIN_MAX_AGE_MS,
-    })
-
-    response.cookie('auth_role', user.role, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: LOGIN_MAX_AGE_MS,
-    })
+    response.cookie('auth_user_id', user.id, getCookieOptions(true))
+    response.cookie('auth_role', user.role, getCookieOptions(false))
 
     response.json({
       success: true,
@@ -306,8 +306,8 @@ authRouter.post(
 authRouter.post(
   '/logout',
   asyncHandler(async (request, response) => {
-    response.clearCookie('auth_user_id')
-    response.clearCookie('auth_role')
+    response.clearCookie('auth_user_id', getCookieOptions(true))
+    response.clearCookie('auth_role', getCookieOptions(false))
 
     response.json({
       success: true,
