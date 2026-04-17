@@ -225,7 +225,7 @@ function BooksPage() {
               <p className="book-meta-secondary">
                 <strong>ISBN:</strong> {book.isbn || 'N/A'}
               </p>
-              {!(activeRole === 'student' && cartBookIds.has(book.isbn)) && (
+              {book.quantity > 0 && !(activeRole === 'student' && cartBookIds.has(book.isbn)) && (
                 <p className="book-meta-secondary">
                   <strong>Purchase options:</strong> {(book.purchaseOption || []).join(' / ') || 'N/A'}
                 </p>
@@ -240,6 +240,8 @@ function BooksPage() {
                 </Link>
                 {activeRole === 'student' && cartBookIds.has(book.isbn) ? (
                   <span className="badge">Already in cart</span>
+                ) : book.quantity <= 0 ? (
+                  <span className="badge">Out of stock</span>
                 ) : null}
               </div>
             </div>

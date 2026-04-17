@@ -50,6 +50,27 @@ async function buildOrder(orderRow) {
   }
 }
 
+async function changeOrderBookQuantities(client, orderId, direction) {
+  const orderItemsResult = await client.query('SELECT book_id, quantity FROM order_items WHERE order_id = $1', [orderId])
+
+  for (const item of orderItemsResult.rows) {
+    const quantityChange = Number(item.quantity) * direction
+    const stockResult = await client.query(
+      `
+        UPDATE books
+        SET quantity = quantity + $2
+        WHERE isbn = $1 AND quantity + $2 >= 0
+        RETURNING quantity
+      `,
+      [item.book_id, quantityChange],
+    )
+
+    if (stockResult.rowCount === 0) {
+      throw new HttpError(400, 'Unable to update stock for order item')
+    }
+  }
+}
+
 ordersRouter.get(
   '/',
   asyncHandler(async (request, response) => {
@@ -99,6 +120,22 @@ ordersRouter.post(
         throw new HttpError(400, 'Cart is empty')
       }
 
+      for (const item of itemsResult.rows) {
+        const stockResult = await client.query(
+          `
+            UPDATE books
+            SET quantity = quantity - $2
+            WHERE isbn = $1 AND quantity >= $2
+            RETURNING quantity
+          `,
+          [item.book_id, item.quantity],
+        )
+
+        if (stockResult.rowCount === 0) {
+          throw new HttpError(400, `Insufficient stock for book: ${item.book_id}`)
+        }
+      }
+
       const orderId = `O${9000 + Date.now().toString().slice(-4)}`
       const orderResult = await client.query(
         `
@@ -146,33 +183,34 @@ ordersRouter.patch(
   '/:orderId/cancel',
   requireRoles(['student']),
   asyncHandler(async (request, response) => {
-    const isStudent = request.auth?.role === 'student'
-    const result = isStudent
-      ? await pool.query(
-          `
-            UPDATE orders
-            SET status = 'canceled', updated_at = NOW()
-            WHERE id = $1 AND student_id = $2 AND status NOT IN ('shipped', 'canceled')
-            RETURNING *
-          `,
-          [request.params.orderId, request.auth.userId],
-        )
-      : await pool.query(
-          `
-            UPDATE orders
-            SET status = 'canceled', updated_at = NOW()
-            WHERE id = $1 AND status NOT IN ('shipped', 'canceled')
-            RETURNING *
-          `,
-          [request.params.orderId],
-        )
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const result = await client.query(
+        `
+          UPDATE orders
+          SET status = 'canceled', updated_at = NOW()
+          WHERE id = $1 AND student_id = $2 AND status NOT IN ('shipped', 'canceled')
+          RETURNING *
+        `,
+        [request.params.orderId, request.auth.userId],
+      )
 
-    if (result.rowCount === 0) {
-      throw new HttpError(404, 'Order not found or cannot be canceled')
+      if (result.rowCount === 0) {
+        throw new HttpError(404, 'Order not found or cannot be canceled')
+      }
+
+      await changeOrderBookQuantities(client, request.params.orderId, 1)
+      await client.query('COMMIT')
+
+      const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))
+      response.json({ success: true, data: order })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
     }
-
-    const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))
-    response.json({ success: true, data: order })
   }),
 )
 
@@ -186,37 +224,54 @@ ordersRouter.patch(
       throw new HttpError(400, 'Invalid order status')
     }
 
-    const result = await pool.query(
-      `
-        UPDATE orders
-        SET
-          status = $2,
-          fulfilled_at = CASE
-            WHEN $2 = 'shipped' THEN COALESCE(fulfilled_at, NOW())
-            ELSE fulfilled_at
-          END,
-          updated_at = NOW()
-        WHERE id = $1 AND status <> 'canceled'
-        RETURNING *
-      `,
-      [request.params.orderId, status],
-    )
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
 
-    if (result.rowCount === 0) {
-      const existingOrderResult = await pool.query('SELECT status FROM orders WHERE id = $1', [request.params.orderId])
+      const existingOrderResult = await client.query('SELECT status FROM orders WHERE id = $1 FOR UPDATE', [request.params.orderId])
 
       if (existingOrderResult.rowCount === 0) {
         throw new HttpError(404, 'Order not found')
       }
 
-      if (existingOrderResult.rows[0].status === 'canceled') {
+      const currentStatus = existingOrderResult.rows[0].status
+      if (currentStatus === 'canceled') {
         throw new HttpError(400, 'Canceled orders cannot be updated')
       }
 
-      throw new HttpError(400, 'Order cannot be updated')
-    }
+      if (currentStatus === 'shipped' && status === 'canceled') {
+        throw new HttpError(400, 'Shipped orders cannot be canceled')
+      }
 
-    const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))
-    response.json({ success: true, data: order })
+      const result = await client.query(
+        `
+          UPDATE orders
+          SET
+            status = $2,
+            fulfilled_at = CASE
+              WHEN $2 = 'shipped' THEN COALESCE(fulfilled_at, NOW())
+              ELSE fulfilled_at
+            END,
+            updated_at = NOW()
+          WHERE id = $1
+          RETURNING *
+        `,
+        [request.params.orderId, status],
+      )
+
+      if (status === 'canceled') {
+        await changeOrderBookQuantities(client, request.params.orderId, 1)
+      }
+
+      await client.query('COMMIT')
+
+      const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))
+      response.json({ success: true, data: order })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
   }),
 )

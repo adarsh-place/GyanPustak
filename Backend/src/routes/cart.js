@@ -105,6 +105,24 @@ cartRouter.post(
       await client.query('BEGIN')
       await ensureCartItemPurchaseOptionColumn(client)
       const cart = await ensureCart(client, studentId)
+
+      const bookResult = await client.query('SELECT quantity FROM books WHERE isbn = $1 FOR UPDATE', [bookId])
+      if (bookResult.rowCount === 0) {
+        throw new HttpError(404, 'Book not found')
+      }
+
+      const existingItemResult = await client.query(
+        'SELECT quantity FROM cart_items WHERE cart_id = $1 AND book_id = $2 FOR UPDATE',
+        [cart.id, bookId],
+      )
+
+      const existingQuantity = existingItemResult.rowCount > 0 ? Number(existingItemResult.rows[0].quantity) : 0
+      const availableQuantity = Number(bookResult.rows[0].quantity)
+
+      if (existingQuantity + quantity > availableQuantity) {
+        throw new HttpError(400, `Requested quantity exceeds available stock (${availableQuantity})`)
+      }
+
       await client.query(
         `
           INSERT INTO cart_items (cart_id, book_id, quantity, purchase_option)
@@ -120,6 +138,66 @@ cartRouter.post(
 
       const cartData = await buildCart(cart)
       response.status(201).json({ success: true, data: cartData })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  }),
+)
+
+cartRouter.patch(
+  '/items/:bookId',
+  asyncHandler(async (request, response) => {
+    const studentId = request.auth.userId
+    const { quantity } = request.body
+
+    if (!Number.isInteger(quantity) || quantity < 0) {
+      throw new HttpError(400, 'quantity must be a non-negative integer')
+    }
+
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      await ensureCartItemPurchaseOptionColumn(client)
+
+      const cart = await ensureCart(client, studentId)
+
+      const bookResult = await client.query('SELECT quantity FROM books WHERE isbn = $1 FOR UPDATE', [request.params.bookId])
+      if (bookResult.rowCount === 0) {
+        throw new HttpError(404, 'Book not found')
+      }
+
+      const availableQuantity = Number(bookResult.rows[0].quantity)
+
+      if (quantity > availableQuantity) {
+        throw new HttpError(400, `Requested quantity exceeds available stock (${availableQuantity})`)
+      }
+
+      if (quantity === 0) {
+        await client.query('DELETE FROM cart_items WHERE cart_id = $1 AND book_id = $2', [cart.id, request.params.bookId])
+      } else {
+        const updateResult = await client.query(
+          `
+            UPDATE cart_items
+            SET quantity = $3
+            WHERE cart_id = $1 AND book_id = $2
+            RETURNING *
+          `,
+          [cart.id, request.params.bookId, quantity],
+        )
+
+        if (updateResult.rowCount === 0) {
+          throw new HttpError(404, 'Cart item not found')
+        }
+      }
+
+      await client.query('UPDATE carts SET updated_at = NOW() WHERE id = $1', [cart.id])
+      await client.query('COMMIT')
+
+      const cartData = await buildCart(cart)
+      response.json({ success: true, data: cartData })
     } catch (error) {
       await client.query('ROLLBACK')
       throw error

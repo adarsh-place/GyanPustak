@@ -272,6 +272,9 @@ File: src/routes/cart.js
   - Adds or increments item
   - Stores purchase_option buy or rent
   - Creates cart automatically if absent
+- PATCH /api/carts/items/:bookId
+  - Updates cart item quantity directly
+  - Quantity 0 removes the item from cart
 - DELETE /api/carts/items/:bookId
   - Removes item and updates cart timestamp
 
@@ -286,6 +289,7 @@ File: src/routes/orders.js
   - Validates payment and shipping fields
   - Creates order from cart items
   - Creates order_items rows
+  - Decrements books.quantity by the ordered item quantity
   - Clears cart
   - Uses transaction
 - PATCH /api/orders/:orderId/cancel
@@ -295,6 +299,7 @@ File: src/routes/orders.js
   - Roles: support, admin, superadmin
   - Allowed status values: new, processed, awaiting shipping, shipped, canceled
   - Once order status is canceled, the order cannot be updated again
+  - When an order transitions to canceled, stock is restored by the order quantity
 
 ### 8.12 Reviews
 

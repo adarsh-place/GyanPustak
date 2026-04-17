@@ -136,6 +136,12 @@ export const apiClient = {
       method: 'DELETE',
     })
   },
+  updateCartItemQuantity(bookIsbn, payload) {
+    return request(`/carts/items/${bookIsbn}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
   getOrders() {
     return request('/orders')
   },

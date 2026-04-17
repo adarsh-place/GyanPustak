@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiClient } from '../api/client'
 import { useGyanPustak } from '../context/GyanPustakContext'
 import './CartPage.css'
 
 function CartPage() {
-  const { activeRole, cart, cartBooks, student, reloadCart, reloadOrders } = useGyanPustak()
+  const { activeRole, cart, cartBooks, books, student, reloadCart, reloadOrders } = useGyanPustak()
   const [shippingType, setShippingType] = useState('standard')
+  const [quantityDrafts, setQuantityDrafts] = useState({})
   const [paymentDetails, setPaymentDetails] = useState({
     creditCardNumber: '',
     creditCardExpirationDate: '',
@@ -25,6 +26,17 @@ function CartPage() {
     return /^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry.trim())
   }
 
+  useEffect(() => {
+    setQuantityDrafts(
+      Object.fromEntries(cartBooks.map((book) => [book.isbn, String(book.quantity ?? 1)])),
+    )
+  }, [cartBooks])
+
+  const getAvailableQuantity = (bookIsbn) => {
+    const bookDetails = books.find((book) => String(book.isbn) === String(bookIsbn))
+    return Number(bookDetails?.quantity ?? 0)
+  }
+
   const handleRemove = async (bookIsbn) => {
     setActionMessage('Removing from cart...')
     setActionType('info')
@@ -37,6 +49,48 @@ function CartPage() {
       setActionType('success')
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : 'Failed to remove item')
+      setActionType('error')
+    } finally {
+      setIsActionLoading(false)
+      setTimeout(() => setActionMessage(''), 1800)
+    }
+  }
+
+  const handleQuantityDraftChange = (bookIsbn, quantity) => {
+    setQuantityDrafts((previous) => ({
+      ...previous,
+      [bookIsbn]: quantity,
+    }))
+  }
+
+  const handleSaveQuantity = async (bookIsbn) => {
+    const draftQuantity = quantityDrafts[bookIsbn]
+    const parsedQuantity = Number(draftQuantity)
+    const availableQuantity = getAvailableQuantity(bookIsbn)
+
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity < 0) {
+      setActionMessage('Quantity must be a non-negative integer')
+      setActionType('error')
+      return
+    }
+
+    if (parsedQuantity > availableQuantity) {
+      setActionMessage(`Quantity cannot exceed available stock (${availableQuantity})`)
+      setActionType('error')
+      return
+    }
+
+    setActionMessage('Updating quantity...')
+    setActionType('info')
+    setIsActionLoading(true)
+
+    try {
+      await apiClient.updateCartItemQuantity(bookIsbn, { quantity: parsedQuantity })
+      await reloadCart()
+      setActionMessage(parsedQuantity === 0 ? 'Item removed successfully' : 'Quantity updated successfully')
+      setActionType('success')
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : 'Failed to update quantity')
       setActionType('error')
     } finally {
       setIsActionLoading(false)
@@ -110,7 +164,7 @@ function CartPage() {
   }
 
   const total = cartBooks.reduce(
-    (sum, book) => (book.purchaseOption === 'buy' ? sum + book.price : sum),
+    (sum, book) => (book.purchaseOption === 'buy' ? sum + book.price * book.quantity : sum),
     0,
   )
 
@@ -152,6 +206,32 @@ function CartPage() {
                 </div>
                 <p className="book-meta">{book.format} • {book.type}</p>
                 <p className="book-option">Option: {book.purchaseOption || 'buy'}</p>
+                <div className="inline-actions">
+                  <label className="meta-label" htmlFor={`quantity-${book.isbn}`}>
+                    Qty
+                  </label>
+                  <span className="meta-label">Available: {getAvailableQuantity(book.isbn)}</span>
+                  <input
+                    id={`quantity-${book.isbn}`}
+                    className="input"
+                    type="number"
+                    min="0"
+                    step="1"
+                    max={Math.max(getAvailableQuantity(book.isbn), Number(book.quantity ?? 1))}
+                    value={quantityDrafts[book.isbn] ?? String(book.quantity ?? 1)}
+                    onChange={(event) => handleQuantityDraftChange(book.isbn, event.target.value)}
+                    disabled={isActionLoading}
+                    style={{ maxWidth: '110px' }}
+                  />
+                  <button
+                    className="button button-secondary"
+                    type="button"
+                    onClick={() => handleSaveQuantity(book.isbn)}
+                    disabled={isActionLoading}
+                  >
+                    Save
+                  </button>
+                </div>
                 <button className="button button-secondary" onClick={() => handleRemove(book.isbn)} disabled={isActionLoading}>
                   Remove
                 </button>

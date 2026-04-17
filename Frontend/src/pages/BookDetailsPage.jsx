@@ -25,6 +25,7 @@ function BookDetailsPage() {
   const cartBookIds = useMemo(() => new Set(cartBooks.map((item) => item.isbn)), [cartBooks])
   const isBookInCart = Boolean(bookIsbn) && cartBookIds.has(bookIsbn)
   const currentStudentEmail = student?.email || null
+  const isOutOfStock = Number(book?.quantity ?? 0) <= 0
   const averageRating = useMemo(() => {
     if (!reviews.length) {
       return null
@@ -315,14 +316,14 @@ function BookDetailsPage() {
               <p><span>Category:</span> {book.category || 'N/A'}</p>
               <p><span>Subcategories:</span> {(book.subcategories || []).join(', ') || 'N/A'}</p>
               <p><span>Keywords:</span> {(book.keywords || []).join(', ') || 'N/A'}</p>
-              {!isBookInCart && (
+              {!isBookInCart && !isOutOfStock && (
                 <p><span>Purchase options:</span> {(book.purchaseOption || []).join(' / ') || 'N/A'}</p>
               )}
             </div>
           </div>
 
           <div className="inline-actions book-details-actions">
-            {activeRole === 'student' && !isBookInCart ? (
+            {activeRole === 'student' && !isBookInCart && !isOutOfStock ? (
               (book.purchaseOption || []).map((option) => (
                 <button
                   key={option}
@@ -333,6 +334,8 @@ function BookDetailsPage() {
                   {option === 'buy' ? 'Buy' : 'Rent'}
                 </button>
               ))
+            ) : activeRole === 'student' && isOutOfStock ? (
+              <span className="badge">Out of stock</span>
             ) : activeRole === 'student' ? (
               <span className="badge">Already in cart</span>
             ) : null}

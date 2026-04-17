@@ -129,9 +129,11 @@ Superadmin
 ### Book purchase flow
 
 1. Student selects buy or rent from books listing.
-2. Item enters cart with purchase option.
-3. Checkout validates card and shipping details.
-4. Backend creates order, moves cart items to order items, clears cart.
+2. Item enters cart with purchase option and quantity.
+3. Student can adjust cart quantities before checkout.
+4. Checkout validates card and shipping details.
+5. Backend creates order, moves cart items to order items, reduces book stock by ordered quantity, and clears cart.
+6. If an order is canceled, the stock is restored by the order quantity.
 
 ### Ticket workflow
 
