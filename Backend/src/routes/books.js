@@ -6,13 +6,13 @@ import { requireRoles } from '../middleware/authGuard.js'
 
 export const booksRouter = Router()
 
-async function loadBookDetails(bookId) {
+async function loadBookDetails(bookIsbn) {
   const [authorsResult, keywordsResult, courseLinksResult] = await Promise.all([
     pool.query(
       'SELECT author_name FROM book_authors WHERE book_id = $1 ORDER BY author_order ASC, author_name ASC',
-      [bookId],
+      [bookIsbn],
     ),
-    pool.query('SELECT keyword FROM book_keywords WHERE book_id = $1 ORDER BY keyword ASC', [bookId]),
+    pool.query('SELECT keyword FROM book_keywords WHERE book_id = $1 ORDER BY keyword ASC', [bookIsbn]),
     pool.query(
       `
         SELECT cb.course_id, cb.relation, c.name AS course_name
@@ -21,7 +21,7 @@ async function loadBookDetails(bookId) {
         WHERE cb.book_id = $1
         ORDER BY c.name ASC
       `,
-      [bookId],
+      [bookIsbn],
     ),
   ])
 
@@ -35,7 +35,6 @@ async function loadBookDetails(bookId) {
 async function enrichBooks(rows) {
   return Promise.all(
     rows.map(async (book) => ({
-      id: book.id,
       title: book.title,
       type: book.type,
       purchaseOption: book.purchase_option,
@@ -50,7 +49,7 @@ async function enrichBooks(rows) {
       category: book.category,
       subcategories: book.subcategories ?? [],
       rating: Number(book.rating),
-      ...((await loadBookDetails(book.id)) ?? {}),
+      ...((await loadBookDetails(book.isbn)) ?? {}),
     })),
   )
 }
@@ -67,9 +66,9 @@ booksRouter.get(
 )
 
 booksRouter.get(
-  '/:id',
+  '/:isbn',
   asyncHandler(async (request, response) => {
-    const result = await pool.query('SELECT * FROM books WHERE id = $1', [request.params.id])
+    const result = await pool.query('SELECT * FROM books WHERE isbn = $1', [request.params.isbn])
     if (result.rowCount === 0) {
       throw new HttpError(404, 'Book not found')
     }
@@ -84,7 +83,6 @@ booksRouter.post(
   requireRoles(['admin', 'superadmin']),
   asyncHandler(async (request, response) => {
     const {
-      id,
       title,
       type,
       purchaseOption = ['buy'],
@@ -104,7 +102,6 @@ booksRouter.post(
     } = request.body
 
     if (
-      !id ||
       !title ||
       !type ||
       price === undefined ||
@@ -126,13 +123,12 @@ booksRouter.post(
       const bookResult = await client.query(
         `
           INSERT INTO books (
-            id, title, type, purchase_option, price, quantity, isbn, publisher,
+            title, type, purchase_option, price, quantity, isbn, publisher,
             publication_date, edition_number, language, format, category, subcategories, rating
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
           RETURNING *
         `,
         [
-          id,
           title,
           type,
           purchaseOption,
@@ -153,12 +149,12 @@ booksRouter.post(
       for (const [index, authorName] of authors.entries()) {
         await client.query(
           'INSERT INTO book_authors (book_id, author_name, author_order) VALUES ($1, $2, $3)',
-          [id, authorName, index + 1],
+          [isbn, authorName, index + 1],
         )
       }
 
       for (const keyword of keywords) {
-        await client.query('INSERT INTO book_keywords (book_id, keyword) VALUES ($1, $2)', [id, keyword])
+        await client.query('INSERT INTO book_keywords (book_id, keyword) VALUES ($1, $2)', [isbn, keyword])
       }
 
       await client.query('COMMIT')

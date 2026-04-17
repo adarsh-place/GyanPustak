@@ -125,7 +125,7 @@ function DashboardPage() {
         payload.password = editFormData.password.trim()
       }
 
-      await apiClient.updateStudent(student.id, payload)
+      await apiClient.updateStudent(student.email, payload)
       await reloadStudents?.()
       setEditFormData((prev) => ({
         ...prev,

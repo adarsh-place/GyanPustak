@@ -8,7 +8,7 @@ function InstructorsPage() {
   const canAddInstructor = activeRole === 'admin' || activeRole === 'superadmin'
   const [formState, setFormState] = useState({
     universityId: '',
-    departmentId: '',
+    departmentName: '',
     firstName: '',
     lastName: '',
   })
@@ -50,7 +50,7 @@ function InstructorsPage() {
     try {
       await apiClient.createInstructor({
         universityId: formState.universityId,
-        departmentId: formState.departmentId || null,
+        departmentName: formState.departmentName || null,
         firstName: formState.firstName.trim(),
         lastName: formState.lastName.trim(),
       })
@@ -58,7 +58,7 @@ function InstructorsPage() {
       await reloadInstructors?.()
       setFormState({
         universityId: '',
-        departmentId: '',
+        departmentName: '',
         firstName: '',
         lastName: '',
       })
@@ -77,7 +77,7 @@ function InstructorsPage() {
     setFormState((previous) => ({
       ...previous,
       universityId,
-      departmentId: '',
+      departmentName: '',
     }))
   }
 
@@ -106,13 +106,13 @@ function InstructorsPage() {
           </select>
           <select
             className="input"
-            value={formState.departmentId}
-            onChange={(event) => setFormState((previous) => ({ ...previous, departmentId: event.target.value }))}
+            value={formState.departmentName}
+            onChange={(event) => setFormState((previous) => ({ ...previous, departmentName: event.target.value }))}
             disabled={!selectedUniversity}
           >
             <option value="">Select a department (optional)</option>
             {selectedUniversity?.departments?.map((department) => (
-              <option key={department.id} value={department.id}>
+              <option key={department.name} value={department.name}>
                 {department.name}
               </option>
             ))}

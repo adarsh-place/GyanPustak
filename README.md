@@ -74,7 +74,7 @@ Database (PostgreSQL)
 - Service desk:
   - Trouble tickets with status history timeline
 - Commerce:
-  - Cart, cart items, orders, order items, cancel rules
+  - Cart, cart items, orders, order items, cancel rules, and staff status progression
 - Community:
   - Book reviews with rating 1-5 and one review per student per book
 
@@ -93,7 +93,10 @@ Support
 - View tickets
 - Create tickets
 - Assign tickets to admin
-- View operational data pages allowed by frontend routing
+- View all orders
+- Update order status (new, processed, awaiting shipping, shipped, canceled)
+- Cannot update an order once it is canceled
+- Students tab is hidden for support in navigation
 
 Admin
 

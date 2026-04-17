@@ -141,8 +141,8 @@ export const courses = [
     semester: 'Spring',
     instructors: ['Ankit Verma'],
     books: [
-      { bookId: 'B101', relation: 'required' },
-      { bookId: 'B103', relation: 'recommended' },
+      { bookIsbn: '9780073523323', relation: 'required' },
+      { bookIsbn: '9780132847377', relation: 'recommended' },
     ],
   },
 ]

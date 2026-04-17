@@ -98,6 +98,9 @@ erDiagram
     ORDERS {
         TEXT id PK
         TEXT student_id FK
+        TEXT shipping_type
+        TEXT status
+        TIMESTAMPTZ fulfilled_at
     }
 
     ORDER_ITEMS {
@@ -142,6 +145,8 @@ erDiagram
 - COURSE_DEPARTMENTS, COURSE_INSTRUCTORS, COURSE_BOOKS, CART_ITEMS, and ORDER_ITEMS are junction tables.
 - BOOK_REVIEWS enforces one review per student per book through a unique constraint on (book_id, student_id).
 - TROUBLE_TICKETS creator can be student or support/admin-side actor depending on created_by_type.
+- ORDERS.status uses a check-domain in schema: new, processed, awaiting shipping, shipped, canceled.
+- API business rule: once an order is canceled, it is immutable and status transitions are blocked.
 
 ## ER to Relational Schema Conversion
 

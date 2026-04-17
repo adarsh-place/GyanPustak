@@ -5,6 +5,7 @@ import { HttpError } from '../utils/httpError.js'
 import { requireRoles } from '../middleware/authGuard.js'
 
 export const ordersRouter = Router()
+const ALLOWED_ORDER_STATUSES = ['new', 'processed', 'awaiting shipping', 'shipped', 'canceled']
 
 function resolveStudentId(request, requestedStudentId) {
   if (request.auth?.role === 'student') {
@@ -23,7 +24,7 @@ async function buildOrder(orderRow) {
     `
       SELECT oi.book_id, oi.quantity, b.title
       FROM order_items oi
-      JOIN books b ON b.id = oi.book_id
+      JOIN books b ON b.isbn = oi.book_id
       WHERE oi.order_id = $1
       ORDER BY b.title ASC
     `,
@@ -151,7 +152,7 @@ ordersRouter.patch(
           `
             UPDATE orders
             SET status = 'canceled', updated_at = NOW()
-            WHERE id = $1 AND student_id = $2 AND status <> 'shipped'
+            WHERE id = $1 AND student_id = $2 AND status NOT IN ('shipped', 'canceled')
             RETURNING *
           `,
           [request.params.orderId, request.auth.userId],
@@ -160,7 +161,7 @@ ordersRouter.patch(
           `
             UPDATE orders
             SET status = 'canceled', updated_at = NOW()
-            WHERE id = $1 AND status <> 'shipped'
+            WHERE id = $1 AND status NOT IN ('shipped', 'canceled')
             RETURNING *
           `,
           [request.params.orderId],
@@ -168,6 +169,51 @@ ordersRouter.patch(
 
     if (result.rowCount === 0) {
       throw new HttpError(404, 'Order not found or cannot be canceled')
+    }
+
+    const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))
+    response.json({ success: true, data: order })
+  }),
+)
+
+ordersRouter.patch(
+  '/:orderId/status',
+  requireRoles(['support', 'admin', 'superadmin']),
+  asyncHandler(async (request, response) => {
+    const { status } = request.body
+
+    if (!ALLOWED_ORDER_STATUSES.includes(status)) {
+      throw new HttpError(400, 'Invalid order status')
+    }
+
+    const result = await pool.query(
+      `
+        UPDATE orders
+        SET
+          status = $2,
+          fulfilled_at = CASE
+            WHEN $2 = 'shipped' THEN COALESCE(fulfilled_at, NOW())
+            ELSE fulfilled_at
+          END,
+          updated_at = NOW()
+        WHERE id = $1 AND status <> 'canceled'
+        RETURNING *
+      `,
+      [request.params.orderId, status],
+    )
+
+    if (result.rowCount === 0) {
+      const existingOrderResult = await pool.query('SELECT status FROM orders WHERE id = $1', [request.params.orderId])
+
+      if (existingOrderResult.rowCount === 0) {
+        throw new HttpError(404, 'Order not found')
+      }
+
+      if (existingOrderResult.rows[0].status === 'canceled') {
+        throw new HttpError(400, 'Canceled orders cannot be updated')
+      }
+
+      throw new HttpError(400, 'Order cannot be updated')
     }
 
     const [order] = await Promise.all(result.rows.map((row) => buildOrder(row)))

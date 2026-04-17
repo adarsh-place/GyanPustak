@@ -24,7 +24,7 @@ export async function requireAuth(request, response, next) {
     }
 
     if (normalizedRole === 'student') {
-      const result = await pool.query('SELECT id FROM students WHERE id = $1', [userId])
+      const result = await pool.query('SELECT email FROM students WHERE email = $1', [userId])
       if (result.rows.length === 0) {
         clearAuthCookies(response)
         throw new HttpError(401, 'Invalid authentication session')

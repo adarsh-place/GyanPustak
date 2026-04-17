@@ -47,7 +47,6 @@ function BooksPage() {
 
     try {
       await apiClient.createBook({
-        id: `B${Date.now()}`,
         title: formState.title.trim(),
         type: formState.type,
         purchaseOption: formState.purchaseOption === 'both' ? ['buy', 'rent'] : [formState.purchaseOption],
@@ -124,7 +123,7 @@ function BooksPage() {
   }, [books, searchTerm])
 
   const cartBookIds = useMemo(
-    () => new Set(cartBooks.map((book) => book.id)),
+    () => new Set(cartBooks.map((book) => book.isbn)),
     [cartBooks],
   )
 
@@ -202,7 +201,7 @@ function BooksPage() {
       <p>Books ({filteredBooks.length})</p>
       <div className="stack">
         {filteredBooks.map((book) => (
-          <article key={book.id} className="card book-card">
+          <article key={book.isbn} className="card book-card">
             <div className="book-card-cover-wrap">
               <img
                 className="book-cover"
@@ -226,18 +225,20 @@ function BooksPage() {
               <p className="book-meta-secondary">
                 <strong>ISBN:</strong> {book.isbn || 'N/A'}
               </p>
-              <p className="book-meta-secondary">
-                <strong>Purchase options:</strong> {(book.purchaseOption || []).join(' / ') || 'N/A'}
-              </p>
+              {!(activeRole === 'student' && cartBookIds.has(book.isbn)) && (
+                <p className="book-meta-secondary">
+                  <strong>Purchase options:</strong> {(book.purchaseOption || []).join(' / ') || 'N/A'}
+                </p>
+              )}
               <p className="book-meta-secondary">
                 <strong>Price: ₹{book.price}</strong>
               </p>
 
               <div className="inline-actions book-card-actions">
-                <Link className="button button-link" to={`/books/${book.id}`}>
+                <Link className="button button-link" to={`/books/${book.isbn}`}>
                   View
                 </Link>
-                {activeRole === 'student' && cartBookIds.has(book.id) ? (
+                {activeRole === 'student' && cartBookIds.has(book.isbn) ? (
                   <span className="badge">Already in cart</span>
                 ) : null}
               </div>

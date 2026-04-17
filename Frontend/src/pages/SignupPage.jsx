@@ -18,7 +18,7 @@ function SignupPage() {
     address: '',
     phoneNumber: '',
     dateOfBirth: '',
-    universityAffiliation: '',
+    universityId: '',
     majorFieldOfStudy: '',
     studentStatus: 'undergraduate',
     yearOfStudy: '1st Year',
@@ -74,7 +74,7 @@ function SignupPage() {
       return
     }
 
-    if (!formState.universityAffiliation) {
+    if (!formState.universityId) {
       setMessage('Please select a university')
       setMessageType('error')
       return
@@ -110,7 +110,7 @@ function SignupPage() {
         address: formState.address.trim(),
         phoneNumber: formState.phoneNumber.trim(),
         dateOfBirth: formState.dateOfBirth || null,
-        universityAffiliation: formState.universityAffiliation,
+        universityId: formState.universityId,
         majorFieldOfStudy: formState.majorFieldOfStudy.trim(),
         studentStatus: formState.studentStatus,
         yearOfStudy: formState.yearOfStudy,
@@ -184,8 +184,8 @@ function SignupPage() {
           />
           <select
             className="input"
-            value={formState.universityAffiliation}
-            onChange={(event) => setFormState((prev) => ({ ...prev, universityAffiliation: event.target.value }))}
+            value={formState.universityId}
+            onChange={(event) => setFormState((prev) => ({ ...prev, universityId: event.target.value }))}
             disabled={isSubmitting || isLoadingUniversities}
           >
             <option value="">Select university</option>

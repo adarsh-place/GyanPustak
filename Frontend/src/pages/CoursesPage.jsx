@@ -12,12 +12,12 @@ function CoursesPage() {
     name: '',
     year: '',
     semester: '',
-    departmentIds: [],
+    departmentNames: [],
     instructorIds: [],
     books: [],
   })
   const [bookFormState, setBookFormState] = useState({
-    bookId: '',
+    bookIsbn: '',
     relation: 'required',
   })
   const [actionMessage, setActionMessage] = useState('')
@@ -68,7 +68,7 @@ function CoursesPage() {
         name: formState.name.trim(),
         year: formState.year.trim(),
         semester: formState.semester.trim(),
-        departmentIds: formState.departmentIds,
+        departmentNames: formState.departmentNames,
         instructorIds: formState.instructorIds,
         books: formState.books,
       })
@@ -79,12 +79,12 @@ function CoursesPage() {
         name: '',
         year: '',
         semester: '',
-        departmentIds: [],
+        departmentNames: [],
         instructorIds: [],
         books: [],
       })
       setBookFormState({
-        bookId: '',
+        bookIsbn: '',
         relation: 'required',
       })
       setActionMessage('Course added successfully')
@@ -112,20 +112,20 @@ function CoursesPage() {
   const clearSelections = () => {
     setFormState((previous) => ({
       ...previous,
-      departmentIds: [],
+      departmentNames: [],
       instructorIds: [],
         books: [],
     }))
   }
 
   const addBookToCourse = () => {
-    if (!bookFormState.bookId) {
+    if (!bookFormState.bookIsbn) {
       setActionMessage('Select a book first')
       setActionType('error')
       return
     }
 
-    const selectedBook = books.find((book) => book.id === bookFormState.bookId)
+    const selectedBook = books.find((book) => book.isbn === bookFormState.bookIsbn)
     if (!selectedBook) {
       setActionMessage('Selected book was not found')
       setActionType('error')
@@ -133,7 +133,7 @@ function CoursesPage() {
     }
 
     setFormState((previous) => {
-      const alreadyAdded = previous.books.some((book) => book.bookId === bookFormState.bookId)
+      const alreadyAdded = previous.books.some((book) => book.bookIsbn === bookFormState.bookIsbn)
       if (alreadyAdded) {
         return previous
       }
@@ -143,7 +143,7 @@ function CoursesPage() {
         books: [
           ...previous.books,
           {
-            bookId: selectedBook.id,
+            bookIsbn: selectedBook.isbn,
             relation: bookFormState.relation,
           },
         ],
@@ -151,15 +151,15 @@ function CoursesPage() {
     })
 
     setBookFormState({
-      bookId: '',
+      bookIsbn: '',
       relation: 'required',
     })
   }
 
-  const removeBookFromCourse = (bookId) => {
+  const removeBookFromCourse = (bookIsbn) => {
     setFormState((previous) => ({
       ...previous,
-      books: previous.books.filter((book) => book.bookId !== bookId),
+      books: previous.books.filter((book) => book.bookIsbn !== bookIsbn),
     }))
   }
 
@@ -225,11 +225,11 @@ function CoursesPage() {
                 <div className="stack">
                   {selectedUniversity.departments.length > 0 ? (
                     selectedUniversity.departments.map((department) => (
-                      <label key={department.id} className="inline-actions">
+                      <label key={department.name} className="inline-actions">
                         <input
                           type="checkbox"
-                          checked={formState.departmentIds.includes(department.id)}
-                          onChange={() => toggleSelection('departmentIds', department.id)}
+                          checked={formState.departmentNames.includes(department.name)}
+                          onChange={() => toggleSelection('departmentNames', department.name)}
                         />
                         <span>{department.name}</span>
                       </label>
@@ -267,14 +267,14 @@ function CoursesPage() {
                 <div className="inline-actions">
                   <select
                     className="input"
-                    value={bookFormState.bookId}
+                    value={bookFormState.bookIsbn}
                     onChange={(event) =>
-                      setBookFormState((previous) => ({ ...previous, bookId: event.target.value }))
+                      setBookFormState((previous) => ({ ...previous, bookIsbn: event.target.value }))
                     }
                   >
                     <option value="">Select a book</option>
                     {books.map((book) => (
-                      <option key={book.id} value={book.id}>
+                      <option key={book.isbn} value={book.isbn}>
                         {book.title}
                       </option>
                     ))}
@@ -297,15 +297,15 @@ function CoursesPage() {
                 {formState.books.length > 0 ? (
                   <div className="stack">
                     {formState.books.map((bookSelection) => {
-                      const selectedBook = books.find((book) => book.id === bookSelection.bookId)
+                      const selectedBook = books.find((book) => book.isbn === bookSelection.bookIsbn)
                       return (
-                        <div key={bookSelection.bookId} className="card" style={{ padding: '10px' }}>
+                        <div key={bookSelection.bookIsbn} className="card" style={{ padding: '10px' }}>
                           <div className="card-header">
-                            <strong>{selectedBook ? selectedBook.title : bookSelection.bookId}</strong>
+                            <strong>{selectedBook ? selectedBook.title : bookSelection.bookIsbn}</strong>
                             <button
                               className="button button-secondary"
                               type="button"
-                              onClick={() => removeBookFromCourse(bookSelection.bookId)}
+                              onClick={() => removeBookFromCourse(bookSelection.bookIsbn)}
                             >
                               Remove
                             </button>
@@ -395,7 +395,7 @@ function CoursesPage() {
                 {course.books.length > 0 ? (
                   <ul className="course-books-list">
                     {course.books.map((book) => (
-                      <li key={book.bookId} className={`course-book-item ${book.relation}`}>
+                      <li key={book.bookIsbn} className={`course-book-item ${book.relation}`}>
                         <span className="course-book-title">{book.title}</span>
                         <span className={`course-book-relation ${book.relation}`}>{book.relation}</span>
                       </li>

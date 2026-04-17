@@ -14,7 +14,7 @@ function StudentsPage() {
     address: '',
     phoneNumber: '',
     dateOfBirth: '',
-    university: '',
+    universityId: '',
     major: '',
     status: 'undergraduate',
     yearOfStudy: '1st Year',
@@ -112,7 +112,7 @@ function StudentsPage() {
       return
     }
 
-    if (!formState.university.trim()) {
+    if (!formState.universityId.trim()) {
       setActionMessage('University is required')
       setActionType('error')
       return
@@ -125,14 +125,13 @@ function StudentsPage() {
     }
 
     const nextStudent = {
-      id: `S${1000 + students.length + 1}`,
       firstName: formState.firstName.trim(),
       lastName: formState.lastName.trim(),
       email: formState.email.trim(),
       address: formState.address.trim(),
       phoneNumber: formState.phoneNumber.trim(),
       dateOfBirth: formState.dateOfBirth || null,
-      university: formState.university.trim(),
+      universityId: formState.universityId.trim(),
       major: formState.major.trim(),
       status: formState.status,
       yearOfStudy: formState.yearOfStudy,
@@ -144,14 +143,13 @@ function StudentsPage() {
 
     try {
       await apiClient.createStudent({
-        id: nextStudent.id,
         firstName: nextStudent.firstName,
         lastName: nextStudent.lastName,
         email: nextStudent.email,
         phoneNumber: nextStudent.phoneNumber,
         address: nextStudent.address,
         dateOfBirth: nextStudent.dateOfBirth,
-        universityAffiliation: nextStudent.university,
+        universityId: nextStudent.universityId,
         majorFieldOfStudy: nextStudent.major,
         studentStatus: nextStudent.status,
         yearOfStudy: nextStudent.yearOfStudy,
@@ -164,7 +162,7 @@ function StudentsPage() {
         address: '',
         phoneNumber: '',
         dateOfBirth: '',
-        university: '',
+        universityId: '',
         major: '',
         status: 'undergraduate',
         yearOfStudy: '1st Year',
@@ -259,11 +257,11 @@ function StudentsPage() {
         />
         <select
           className="input"
-          value={formState.university}
+          value={formState.universityId}
           onChange={(event) =>
             setFormState((previous) => ({
               ...previous,
-              university: event.target.value,
+              universityId: event.target.value,
             }))
           }
         >
@@ -357,10 +355,10 @@ function StudentsPage() {
           </article>
         ) : (
           filteredStudents.map((student) => (
-            <article key={student.id} className="card student-card">
+            <article key={student.email} className="card student-card">
               <div className="student-card-header">
                 <div>
-                  <p className="student-id">{student.id}</p>
+                  <p className="student-id">{student.email}</p>
                   <h4 className="student-name">
                     {student.firstName} {student.lastName}
                   </h4>

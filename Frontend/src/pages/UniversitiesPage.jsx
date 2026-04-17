@@ -258,7 +258,7 @@ function UniversitiesPage() {
             <div className="department-chip-list">
               {university.departments.length > 0 ? (
                 university.departments.map((department) => (
-                  <span key={department.id} className="department-chip">
+                  <span key={department.name} className="department-chip">
                     {department.name}
                   </span>
                 ))

@@ -13,13 +13,12 @@ function toDisplayDate(value) {
 
 function mapStudent(studentRow) {
   return {
-    id: studentRow.id,
     firstName: studentRow.first_name,
     lastName: studentRow.last_name,
     email: studentRow.email,
     address: studentRow.address,
     phoneNumber: studentRow.phone_number,
-    dateOfBirth: studentRow.date_of_birth,
+    dateOfBirth: toDisplayDate(studentRow.date_of_birth),
     university: studentRow.university_name || studentRow.university_affiliation,
     universityId: studentRow.university_affiliation,
     universityName: studentRow.university_name || studentRow.university_affiliation,
@@ -46,7 +45,6 @@ function mapEmployee(employeeRow) {
 
 function mapBook(bookRow) {
   return {
-    id: bookRow.id,
     title: bookRow.title,
     type: bookRow.type,
     purchaseOption: bookRow.purchaseOption || bookRow.purchase_option || [],
@@ -134,6 +132,7 @@ function mapCart(cartRow) {
     updatedAt: toDisplayDate(cartRow.updatedAt),
     items: (cartRow.items || []).map((item) => ({
       id: item.bookId,
+      isbn: item.bookId,
       title: item.title,
       price: Number(item.price),
       format: item.format,
@@ -150,7 +149,11 @@ function mapOrder(orderRow) {
     studentId: orderRow.studentId,
     dateCreated: toDisplayDate(orderRow.createdAt),
     dateFulfilled: toDisplayDate(orderRow.fulfilledAt),
-    items: (orderRow.items || []).map((item) => item.bookId),
+    items: (orderRow.items || []).map((item) => ({
+      bookId: item.bookId,
+      title: item.title,
+      quantity: Number(item.quantity),
+    })),
     shippingType: orderRow.shippingType,
     cardNumber: orderRow.creditCardNumber,
     cardExpiry: orderRow.creditCardExpirationDate,
@@ -166,7 +169,7 @@ function mapInstructor(instructorRow) {
     firstName: instructorRow.first_name,
     lastName: instructorRow.last_name,
     universityId: instructorRow.university_id,
-    departmentId: instructorRow.department_id,
+    departmentName: instructorRow.department_name,
     universityName: instructorRow.university_name,
     departmentName: instructorRow.department_name,
   }
@@ -274,6 +277,10 @@ export function GyanPustakProvider({ children }) {
 
         setCart(mapCart(cartResponse.data || { items: [] }))
         setOrders((ordersResponse.data || []).map(mapOrder))
+      } else if (['support', 'admin', 'superadmin'].includes(activeRole)) {
+        const ordersResponse = await apiClient.getOrders()
+        setCart(mapCart({ items: [] }))
+        setOrders((ordersResponse.data || []).map(mapOrder))
       } else {
         setCart(mapCart({ items: [] }))
         setOrders([])
@@ -364,7 +371,7 @@ export function GyanPustakProvider({ children }) {
   }, [activeRole])
 
   const reloadOrders = useCallback(async () => {
-    if (activeRole !== 'student') {
+    if (!['student', 'support', 'admin', 'superadmin'].includes(activeRole)) {
       setOrders([])
       return
     }

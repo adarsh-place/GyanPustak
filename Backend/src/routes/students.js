@@ -6,6 +6,18 @@ import { HttpError } from '../utils/httpError.js'
 import { requireRoles } from '../middleware/authGuard.js'
 
 export const studentsRouter = Router()
+const LOGIN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
+
+function getCookieOptions(httpOnly) {
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  return {
+    httpOnly,
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax',
+    maxAge: LOGIN_MAX_AGE_MS,
+  }
+}
 
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -29,7 +41,7 @@ studentsRouter.get(
             SELECT s.*, u.name AS university_name
             FROM students s
             LEFT JOIN universities u ON u.id = s.university_affiliation
-            WHERE s.id = $1
+            WHERE s.email = $1
           `,
           [request.auth.userId],
         )
@@ -51,7 +63,6 @@ studentsRouter.post(
   requireRoles(['admin', 'superadmin']),
   asyncHandler(async (request, response) => {
     const {
-      id,
       firstName,
       lastName,
       email,
@@ -59,18 +70,18 @@ studentsRouter.post(
       phoneNumber,
       dateOfBirth = null,
       universityAffiliation,
+      universityId,
       majorFieldOfStudy,
       studentStatus,
       yearOfStudy,
     } = request.body
 
     if (
-      !id ||
       !firstName ||
       !lastName ||
       !email ||
       !phoneNumber ||
-      !universityAffiliation ||
+      !(universityAffiliation || universityId) ||
       !majorFieldOfStudy ||
       !studentStatus ||
       !yearOfStudy
@@ -86,23 +97,23 @@ studentsRouter.post(
     try {
       await client.query('BEGIN')
 
+      const selectedUniversityId = universityAffiliation || universityId
       const result = await client.query(
         `
           INSERT INTO students (
-            id, first_name, last_name, email, address, phone_number, date_of_birth,
+            first_name, last_name, email, address, phone_number, date_of_birth,
             university_affiliation, major_field_of_study, student_status, year_of_study, password_hash
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
           RETURNING *
         `,
         [
-          id,
           firstName,
           lastName,
-          email,
+          email.trim().toLowerCase(),
           address,
           phoneNumber,
           dateOfBirth,
-          universityAffiliation,
+          selectedUniversityId,
           majorFieldOfStudy,
           studentStatus,
           yearOfStudy,
@@ -110,8 +121,8 @@ studentsRouter.post(
         ],
       )
 
-      const cartId = id.startsWith('S') ? `C${id.slice(1)}` : `C${id}`
-      await client.query('INSERT INTO carts (id, student_id) VALUES ($1, $2)', [cartId, id])
+      const cartId = `C${Date.now()}${Math.floor(100 + Math.random() * 900)}`
+      await client.query('INSERT INTO carts (id, student_id) VALUES ($1, $2)', [cartId, email.trim().toLowerCase()])
 
       await client.query('COMMIT')
       response.status(201).json({ success: true, data: result.rows[0] })
@@ -132,7 +143,7 @@ studentsRouter.patch(
     const authUserId = request.auth?.userId
 
     if (!studentId) {
-      throw new HttpError(400, 'Student id is required')
+      throw new HttpError(400, 'Student identifier is required')
     }
 
     if (role === 'student' && authUserId !== studentId) {
@@ -145,7 +156,7 @@ studentsRouter.patch(
 
     const firstName = (request.body.first_name ?? request.body.firstName ?? '').trim()
     const lastName = (request.body.last_name ?? request.body.lastName ?? '').trim()
-    const email = (request.body.email ?? '').trim()
+    const email = (request.body.email ?? '').trim().toLowerCase()
     const address = (request.body.address ?? '').trim()
     const phoneNumber = (request.body.phone_number ?? request.body.phoneNumber ?? '').trim()
     const dateOfBirth = (request.body.date_of_birth ?? request.body.dateOfBirth ?? '').trim()
@@ -198,7 +209,7 @@ studentsRouter.patch(
       universityAffiliation,
       majorFieldOfStudy,
       yearOfStudy,
-      studentId,
+      studentId.trim().toLowerCase(),
     ]
 
     let updateQuery = `
@@ -222,7 +233,7 @@ studentsRouter.patch(
       updateQuery += ', password_hash = $11'
     }
 
-    updateQuery += ' WHERE id = $10 RETURNING *'
+    updateQuery += ' WHERE email = $10 RETURNING *'
 
     let updatedStudent = null
     try {
@@ -243,10 +254,14 @@ studentsRouter.patch(
         SELECT s.*, u.name AS university_name
         FROM students s
         LEFT JOIN universities u ON u.id = s.university_affiliation
-        WHERE s.id = $1
+        WHERE s.email = $1
       `,
-      [updatedStudent.id],
+      [updatedStudent.email],
     )
+
+    if (role === 'student' && authUserId === studentId && updatedStudent.email !== authUserId) {
+      response.cookie('auth_user_id', updatedStudent.email, getCookieOptions(true))
+    }
 
     response.json({
       success: true,

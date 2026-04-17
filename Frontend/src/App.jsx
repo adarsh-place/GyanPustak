@@ -20,15 +20,14 @@ import './App.css'
 
 const visibleNavLinks = [
   { to: '/', label: 'Dashboard' },
-  { to: '/books', label: 'Books' },
-  { to: '/universities', label: 'Universities' },
-  { to: '/courses', label: 'Courses' },
-  { to: '/instructors', label: 'Instructors' },
+  { to: '/books', label: 'Books', supportBlocked: true },
+  { to: '/universities', label: 'Universities', supportBlocked: true },
+  { to: '/courses', label: 'Courses', supportBlocked: true },
+  { to: '/instructors', label: 'Instructors', supportBlocked: true },
   { to: '/tickets', label: 'Tickets' },
-  { to: '/cart', label: 'Cart', studentOnly: true },
-  { to: '/orders', label: 'Orders', studentOnly: true },
-  { to: '/students', label: 'Students', staffOnly: true },
-  { to: '/employees', label: 'Employees' },
+  { to: '/orders', label: 'Orders', staffOnly: true },
+  { to: '/students', label: 'Students', adminOnly: true },
+  { to: '/employees', label: 'Employees', staffOnly: true },
 ]
 
 function App() {
@@ -53,6 +52,7 @@ function AppContent() {
   const allowedNavLinks = visibleNavLinks.filter((link) => {
     if (link.studentOnly && activeRole !== 'student') return false
     if (link.adminOnly && activeRole !== 'admin' && activeRole !== 'superadmin') return false
+    if (link.supportBlocked && activeRole === 'support') return false
     if (link.staffOnly && !['support', 'admin', 'superadmin'].includes(activeRole)) return false
     return true
   })
@@ -95,15 +95,51 @@ function AppContent() {
 
         {isAuthenticated && (
           <nav className="nav-links">
-            {allowedNavLinks.map((link) => (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-              >
-                {link.label}
-              </NavLink>
-            ))}
+            <div className="nav-links-main">
+              {allowedNavLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </div>
+
+            {activeRole === 'student' && (
+              <div className="nav-right-actions">
+                <NavLink
+                  to="/cart"
+                  className={({ isActive }) =>
+                    isActive ? 'nav-link nav-icon-link active' : 'nav-link nav-icon-link'
+                  }
+                  aria-label="Cart"
+                  title="Cart"
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path
+                      d="M3 4h2l2.4 9.6A2 2 0 0 0 9.34 15h8.92a2 2 0 0 0 1.92-1.44L22 7H7.1"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <circle cx="10" cy="20" r="1.5" fill="currentColor" />
+                    <circle cx="18" cy="20" r="1.5" fill="currentColor" />
+                  </svg>
+                </NavLink>
+                <NavLink
+                  to="/orders"
+                  className={({ isActive }) =>
+                    isActive ? 'nav-link nav-text-link active' : 'nav-link nav-text-link'
+                  }
+                >
+                  Orders
+                </NavLink>
+              </div>
+            )}
           </nav>
         )}
 
@@ -124,11 +160,11 @@ function AppContent() {
             ) : (
               <>
                 <Route path="/" element={<DashboardPage />} />
-                <Route path="/books" element={<BooksPage />} />
-                <Route path="/books/:id" element={<BookDetailsPage />} />
-                <Route path="/universities" element={<UniversitiesPage />} />
-                <Route path="/courses" element={<CoursesPage />} />
-                <Route path="/instructors" element={<InstructorsPage />} />
+                <Route path="/books" element={activeRole !== 'support' ? <BooksPage /> : <Navigate to="/" replace />} />
+                <Route path="/books/:id" element={activeRole !== 'support' ? <BookDetailsPage /> : <Navigate to="/" replace />} />
+                <Route path="/universities" element={activeRole !== 'support' ? <UniversitiesPage /> : <Navigate to="/" replace />} />
+                <Route path="/courses" element={activeRole !== 'support' ? <CoursesPage /> : <Navigate to="/" replace />} />
+                <Route path="/instructors" element={activeRole !== 'support' ? <InstructorsPage /> : <Navigate to="/" replace />} />
                 <Route path="/tickets" element={<TicketsPage />} />
                 <Route
                   path="/cart"
@@ -136,7 +172,16 @@ function AppContent() {
                 />
                 <Route
                   path="/orders"
-                  element={activeRole === 'student' ? <OrdersPage /> : <Navigate to="/" replace />}
+                  element={
+                    activeRole === 'student' ||
+                    activeRole === 'support' ||
+                    activeRole === 'admin' ||
+                    activeRole === 'superadmin' ? (
+                      <OrdersPage />
+                    ) : (
+                      <Navigate to="/" replace />
+                    )
+                  }
                 />
                 <Route
                   path="/students"

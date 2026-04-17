@@ -200,6 +200,8 @@ File: src/routes/courses.js
   - Roles: admin, superadmin
   - Validates university
   - Creates course with generated id
+  - Accepts course book references using bookId, bookIsbn, or isbn
+  - Validates course book relation in required or recommended
   - Inserts junction records for:
     - course_departments
     - course_instructors
@@ -288,7 +290,11 @@ File: src/routes/orders.js
   - Uses transaction
 - PATCH /api/orders/:orderId/cancel
   - Role: student
-  - Cancels non-shipped order
+  - Cancels non-shipped and non-canceled order
+- PATCH /api/orders/:orderId/status
+  - Roles: support, admin, superadmin
+  - Allowed status values: new, processed, awaiting shipping, shipped, canceled
+  - Once order status is canceled, the order cannot be updated again
 
 ### 8.12 Reviews
 

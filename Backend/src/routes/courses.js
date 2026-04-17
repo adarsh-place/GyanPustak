@@ -10,9 +10,9 @@ async function buildCourse(courseRow) {
   const [departmentResult, instructorResult, bookResult] = await Promise.all([
     pool.query(
       `
-        SELECT d.id, d.name
+        SELECT d.name
         FROM course_departments cd
-        JOIN departments d ON d.id = cd.department_id
+        JOIN departments d ON d.university_id = cd.university_id AND d.name = cd.department_name
         WHERE cd.course_id = $1
         ORDER BY d.name ASC
       `,
@@ -32,7 +32,7 @@ async function buildCourse(courseRow) {
       `
         SELECT cb.book_id, cb.relation, b.title
         FROM course_books cb
-        JOIN books b ON b.id = cb.book_id
+        JOIN books b ON b.isbn = cb.book_id
         WHERE cb.course_id = $1
         ORDER BY b.title ASC
       `,
@@ -82,7 +82,15 @@ coursesRouter.post(
   '/add',
   requireRoles(['admin','superadmin']),
   asyncHandler(async (request, response) => {
-    const { universityId, name, year, semester, departmentIds = [], instructorIds = [], books = [] } = request.body
+    const {
+      universityId,
+      name,
+      year,
+      semester,
+      departmentNames = request.body.departmentIds || [],
+      instructorIds = [],
+      books = [],
+    } = request.body
 
     if (!universityId || !name || !year || !semester) {
       throw new HttpError(400, 'Missing required course fields')
@@ -110,10 +118,19 @@ coursesRouter.post(
             [generatedId, universityId, name, year, semester],
           )
 
-          for (const departmentId of departmentIds) {
+          for (const departmentName of departmentNames) {
+            const departmentCheck = await client.query(
+              'SELECT 1 FROM departments WHERE university_id = $1 AND name = $2',
+              [universityId, departmentName],
+            )
+
+            if (departmentCheck.rowCount === 0) {
+              throw new HttpError(400, `Department not found for university: ${departmentName}`)
+            }
+
             await client.query(
-              'INSERT INTO course_departments (course_id, department_id) VALUES ($1, $2)',
-              [generatedId, departmentId],
+              'INSERT INTO course_departments (course_id, university_id, department_name) VALUES ($1, $2, $3)',
+              [generatedId, universityId, departmentName],
             )
           }
 
@@ -125,9 +142,21 @@ coursesRouter.post(
           }
 
           for (const book of books) {
+            const resolvedBookId =
+              typeof book === 'string' ? book : book?.bookId ?? book?.bookIsbn ?? book?.isbn ?? null
+            const resolvedRelation = typeof book === 'string' ? 'required' : book?.relation ?? 'required'
+
+            if (!resolvedBookId) {
+              throw new HttpError(400, 'Each course book must include bookId, bookIsbn, or isbn')
+            }
+
+            if (!['required', 'recommended'].includes(resolvedRelation)) {
+              throw new HttpError(400, 'Book relation must be required or recommended')
+            }
+
             await client.query(
               'INSERT INTO course_books (course_id, book_id, relation) VALUES ($1, $2, $3)',
-              [generatedId, book.bookId, book.relation],
+              [generatedId, resolvedBookId, resolvedRelation],
             )
           }
 

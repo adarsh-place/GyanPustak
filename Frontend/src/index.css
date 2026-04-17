@@ -82,6 +82,13 @@ p {
 
 .nav-links {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.nav-links-main {
+  display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
@@ -100,6 +107,28 @@ p {
   background: #1d4ed8;
   color: #ffffff;
   border-color: #1d4ed8;
+}
+
+.nav-right-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+  align-items: center;
+}
+
+.nav-icon-link {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+}
+
+.nav-icon-link svg {
+  width: 18px;
+  height: 18px;
 }
 
 .page-content {
@@ -206,6 +235,20 @@ p {
 @media (max-width: 700px) {
   .topbar {
     flex-direction: column;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .nav-links-main {
+    width: 100%;
+  }
+
+  .nav-right-actions {
+    justify-content: flex-end;
   }
 
   .role-selector select {

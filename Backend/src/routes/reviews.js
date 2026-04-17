@@ -25,7 +25,7 @@ reviewsRouter.get(
           s.first_name,
           s.last_name
         FROM book_reviews br
-        JOIN students s ON s.id = br.student_id
+        JOIN students s ON s.email = br.student_id
         WHERE br.book_id = $1
         ORDER BY br.created_at DESC
       `,
@@ -68,7 +68,7 @@ reviewsRouter.post(
     }
 
     // Check if book exists
-    const bookCheck = await pool.query('SELECT id FROM books WHERE id = $1', [bookId])
+    const bookCheck = await pool.query('SELECT isbn FROM books WHERE isbn = $1', [bookId])
     if (bookCheck.rowCount === 0) {
       throw new HttpError(404, 'Book not found')
     }
@@ -100,7 +100,7 @@ reviewsRouter.post(
 
     // Get student name for response
     const studentInfo = await pool.query(
-      'SELECT first_name, last_name FROM students WHERE id = $1',
+      'SELECT first_name, last_name FROM students WHERE email = $1',
       [studentId],
     )
 

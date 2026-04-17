@@ -19,7 +19,7 @@ async function buildTicket(ticketRow) {
         END AS changed_by_name
       FROM ticket_status_history tsh
       LEFT JOIN students s
-        ON tsh.changed_by_type = 'student' AND s.id = tsh.changed_by_id
+        ON tsh.changed_by_type = 'student' AND s.email = tsh.changed_by_id
       LEFT JOIN employees e
         ON tsh.changed_by_type IN ('support', 'admin', 'superadmin') AND e.id = tsh.changed_by_id
       WHERE tsh.ticket_id = $1
@@ -30,7 +30,7 @@ async function buildTicket(ticketRow) {
 
   const creatorResult =
     ticketRow.created_by_type === 'student'
-      ? await pool.query('SELECT first_name, last_name FROM students WHERE id = $1', [ticketRow.created_by_id])
+      ? await pool.query('SELECT first_name, last_name FROM students WHERE email = $1', [ticketRow.created_by_id])
       : await pool.query('SELECT first_name, last_name FROM employees WHERE id = $1', [ticketRow.created_by_id])
 
   const resolverResult = ticketRow.resolved_by_employee_id
@@ -110,9 +110,25 @@ ticketsRouter.post(
       throw new HttpError(400, 'Missing required ticket fields')
     }
 
-    const isStudent = request.auth?.role === 'student'
-    const ticketCreatedByType = isStudent ? 'student' : createdByType
-    const ticketCreatedById = isStudent ? request.auth.userId : createdById
+    const authRole = request.auth?.role
+    const authUserId = request.auth?.userId
+    const isStudent = authRole === 'student'
+    const isSupport = authRole === 'support'
+
+    if (!isStudent && !isSupport) {
+      throw new HttpError(403, 'Only students and support users can create tickets')
+    }
+
+    if (createdByType && createdByType !== authRole) {
+      throw new HttpError(403, 'Invalid ticket creator type')
+    }
+
+    if (createdById && createdById !== authUserId) {
+      throw new HttpError(403, 'Invalid ticket creator id')
+    }
+
+    const ticketCreatedByType = authRole
+    const ticketCreatedById = authUserId
 
     if (!ticketCreatedByType || !ticketCreatedById) {
       throw new HttpError(400, 'Missing required ticket creator fields')

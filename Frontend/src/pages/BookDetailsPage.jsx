@@ -5,10 +5,10 @@ import { useGyanPustak } from '../context/GyanPustakContext'
 import './BookDetailsPage.css'
 
 function BookDetailsPage() {
-  const { id: bookId } = useParams()
-  const { books, activeRole, cartBooks, students, reloadCart } = useGyanPustak()
+  const { id: bookIsbn } = useParams()
+  const { books, activeRole, cartBooks, student, reloadCart } = useGyanPustak()
 
-  const [book, setBook] = useState(() => books.find((item) => item.id === bookId) || null)
+  const [book, setBook] = useState(() => books.find((item) => item.isbn === bookIsbn) || null)
   const [isLoadingBook, setIsLoadingBook] = useState(false)
   const [bookError, setBookError] = useState('')
 
@@ -22,8 +22,9 @@ function BookDetailsPage() {
   const [isActionLoading, setIsActionLoading] = useState(false)
   const [imageFailed, setImageFailed] = useState(false)
 
-  const currentStudentId = students[0] ? students[0].id : null
-  const cartBookIds = useMemo(() => new Set(cartBooks.map((item) => item.id)), [cartBooks])
+  const cartBookIds = useMemo(() => new Set(cartBooks.map((item) => item.isbn)), [cartBooks])
+  const isBookInCart = Boolean(bookIsbn) && cartBookIds.has(bookIsbn)
+  const currentStudentEmail = student?.email || null
   const averageRating = useMemo(() => {
     if (!reviews.length) {
       return null
@@ -42,16 +43,16 @@ function BookDetailsPage() {
   }, [book?.isbn])
 
   useEffect(() => {
-    const selectedBook = books.find((item) => item.id === bookId) || null
+    const selectedBook = books.find((item) => item.isbn === bookIsbn) || null
     setBook(selectedBook)
     setImageFailed(false)
-  }, [books, bookId])
+  }, [books, bookIsbn])
 
   useEffect(() => {
     let isMounted = true
 
     async function loadBookDetails() {
-      if (!bookId) {
+      if (!bookIsbn) {
         return
       }
 
@@ -59,7 +60,7 @@ function BookDetailsPage() {
       setBookError('')
 
       try {
-        const response = await apiClient.getBookById(bookId)
+        const response = await apiClient.getBookByIsbn(bookIsbn)
         if (!isMounted) {
           return
         }
@@ -83,20 +84,20 @@ function BookDetailsPage() {
     return () => {
       isMounted = false
     }
-  }, [bookId])
+  }, [bookIsbn])
 
   useEffect(() => {
     let isMounted = true
 
     async function loadBookReviews() {
-      if (!bookId) {
+      if (!bookIsbn) {
         return
       }
 
       setLoadingReviews(true)
 
       try {
-        const response = await apiClient.getBookReviews(bookId)
+        const response = await apiClient.getBookReviews(bookIsbn)
         if (!isMounted) {
           return
         }
@@ -124,10 +125,10 @@ function BookDetailsPage() {
     return () => {
       isMounted = false
     }
-  }, [bookId])
+  }, [bookIsbn])
 
   const handleAddToCart = async (purchaseOption = 'buy') => {
-    if (activeRole !== 'student' || !bookId) {
+    if (activeRole !== 'student' || !bookIsbn) {
       return
     }
 
@@ -138,7 +139,7 @@ function BookDetailsPage() {
     setIsActionLoading(true)
 
     try {
-      await apiClient.addCartItem({ bookId, quantity: 1, purchaseOption })
+      await apiClient.addCartItem({ bookId: bookIsbn, quantity: 1, purchaseOption })
       await reloadCart()
       setActionMessage(`${optionLabel} option added successfully`)
       setActionType('success')
@@ -154,7 +155,7 @@ function BookDetailsPage() {
   const handleSubmitReview = async (event) => {
     event.preventDefault()
 
-    if (activeRole !== 'student' || !bookId) {
+    if (activeRole !== 'student' || !bookIsbn) {
       setActionMessage('Only students can write reviews')
       setActionType('error')
       return
@@ -178,12 +179,12 @@ function BookDetailsPage() {
 
     try {
       await apiClient.createReview({
-        bookId,
+        bookId: bookIsbn,
         rating: Number(reviewFormState.rating),
         reviewText: reviewFormState.reviewText.trim(),
       })
 
-      const response = await apiClient.getBookReviews(bookId)
+      const response = await apiClient.getBookReviews(bookIsbn)
       const responseData = response.data
       const loadedReviews = Array.isArray(responseData) ? responseData : responseData?.reviews || []
       const currentUserHasReviewed = Array.isArray(responseData) ? false : Boolean(responseData?.currentUserHasReviewed)
@@ -210,7 +211,7 @@ function BookDetailsPage() {
     try {
       await apiClient.deleteReview(reviewId)
 
-      const response = await apiClient.getBookReviews(bookId)
+      const response = await apiClient.getBookReviews(bookIsbn)
       const responseData = response.data
       const loadedReviews = Array.isArray(responseData) ? responseData : responseData?.reviews || []
       const currentUserHasReviewed = Array.isArray(responseData) ? false : Boolean(responseData?.currentUserHasReviewed)
@@ -314,12 +315,14 @@ function BookDetailsPage() {
               <p><span>Category:</span> {book.category || 'N/A'}</p>
               <p><span>Subcategories:</span> {(book.subcategories || []).join(', ') || 'N/A'}</p>
               <p><span>Keywords:</span> {(book.keywords || []).join(', ') || 'N/A'}</p>
-              <p><span>Purchase options:</span> {(book.purchaseOption || []).join(' / ') || 'N/A'}</p>
+              {!isBookInCart && (
+                <p><span>Purchase options:</span> {(book.purchaseOption || []).join(' / ') || 'N/A'}</p>
+              )}
             </div>
           </div>
 
           <div className="inline-actions book-details-actions">
-            {activeRole === 'student' && !cartBookIds.has(book.id) ? (
+            {activeRole === 'student' && !isBookInCart ? (
               (book.purchaseOption || []).map((option) => (
                 <button
                   key={option}
@@ -415,7 +418,7 @@ function BookDetailsPage() {
                   <small className="review-date">
                     {new Date(review.created_at).toLocaleDateString()}
                   </small>
-                  {((activeRole === 'student' && review.student_id === currentStudentId) || activeRole === 'admin' || activeRole === 'superadmin') && (
+                  {((activeRole === 'student' && review.student_id === currentStudentEmail) || activeRole === 'admin' || activeRole === 'superadmin') && (
                     <button
                       className="button-small"
                       onClick={() => handleDeleteReview(review.id)}

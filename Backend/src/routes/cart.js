@@ -38,7 +38,7 @@ async function buildCart(cartRow) {
     `
       SELECT ci.book_id, ci.quantity, ci.purchase_option, b.title, b.price, b.format, b.type
       FROM cart_items ci
-      JOIN books b ON b.id = ci.book_id
+      JOIN books b ON b.isbn = ci.book_id
       WHERE ci.cart_id = $1
       ORDER BY b.title ASC
     `,

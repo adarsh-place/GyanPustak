@@ -59,8 +59,8 @@ export const apiClient = {
   getBooks() {
     return request(`/books`)
   },
-  getBookById(bookId) {
-    return request(`/books/${bookId}`)
+  getBookByIsbn(bookIsbn) {
+    return request(`/books/${bookIsbn}`)
   },
   createBook(payload) {
     return request('/books/add', {
@@ -131,8 +131,8 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
-  removeCartItem(bookId) {
-    return request(`/carts/items/${bookId}`, {
+  removeCartItem(bookIsbn) {
+    return request(`/carts/items/${bookIsbn}`, {
       method: 'DELETE',
     })
   },
@@ -148,6 +148,12 @@ export const apiClient = {
   cancelOrder(orderId) {
     return request(`/orders/${orderId}/cancel`, {
       method: 'PATCH',
+    })
+  },
+  updateOrderStatus(orderId, payload) {
+    return request(`/orders/${orderId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
     })
   },
   createEmployee(payload) {
@@ -174,8 +180,8 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
-  getBookReviews(bookId) {
-    return request(`/reviews/book/${bookId}`)
+  getBookReviews(bookIsbn) {
+    return request(`/reviews/book/${bookIsbn}`)
   },
   createReview(payload) {
     return request('/reviews/add', {

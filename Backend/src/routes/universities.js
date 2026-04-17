@@ -26,14 +26,13 @@ async function buildUniversity(universityRow) {
       phone: universityRow.representative_phone,
     },
     departments: departmentsResult.rows.map((department) => ({
-      id: department.id,
       name: department.name,
     })),
     instructors: instructorsResult.rows.map((instructor) => ({
       id: instructor.id,
       firstName: instructor.first_name,
       lastName: instructor.last_name,
-      departmentId: instructor.department_id,
+      departmentName: instructor.department_name,
     })),
   }
 }
@@ -139,36 +138,23 @@ universitiesRouter.post(
       throw new HttpError(404, 'University not found')
     }
 
-    const client = await pool.connect()
     let result = null
     try {
-      for (let attempt = 0; attempt < 10; attempt += 1) {
-        const generatedDepartmentId = `D${Date.now()}${Math.floor(100 + Math.random() * 900)}`
-        try {
-          result = await client.query(
-            'INSERT INTO departments (id, university_id, name) VALUES ($1, $2, $3) RETURNING *',
-            [generatedDepartmentId, universityId, name.trim()],
-          )
-          break
-        } catch (error) {
-          if (error?.code === '23505' && error?.constraint === 'departments_pkey') {
-            continue
-          }
-          throw error
-        }
+      result = await pool.query(
+        'INSERT INTO departments (university_id, name) VALUES ($1, $2) RETURNING *',
+        [universityId, name.trim()],
+      )
+    } catch (error) {
+      if (error?.code === '23505') {
+        throw new HttpError(409, 'Department already exists for this university')
       }
-    } finally {
-      client.release()
-    }
-
-    if (!result) {
-      throw new HttpError(500, 'Failed to generate unique department id')
+      throw error
     }
 
     response.status(201).json({
       success: true,
       data: {
-        id: result.rows[0].id,
+        universityId: result.rows[0].university_id,
         name: result.rows[0].name,
       },
     })

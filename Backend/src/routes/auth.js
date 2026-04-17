@@ -19,10 +19,6 @@ function getCookieOptions(httpOnly) {
   }
 }
 
-function generateStudentId() {
-  return `S${Date.now()}${Math.floor(100 + Math.random() * 900)}`
-}
-
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
@@ -63,7 +59,7 @@ async function resolveAuthSession(request, response) {
   }
 
   if (normalizedRole === 'student') {
-    const result = await pool.query('SELECT id FROM students WHERE id = $1', [userId])
+    const result = await pool.query('SELECT email FROM students WHERE email = $1', [userId])
     if (result.rowCount === 0) {
       clearAuthCookies(response)
       return {
@@ -105,6 +101,7 @@ authRouter.post(
       phoneNumber,
       dateOfBirth = null,
       universityAffiliation,
+      universityId,
       majorFieldOfStudy,
       studentStatus,
       yearOfStudy,
@@ -117,7 +114,7 @@ authRouter.post(
       !lastName ||
       !email ||
       !phoneNumber ||
-      !universityAffiliation ||
+      !(universityAffiliation || universityId) ||
       !majorFieldOfStudy ||
       !studentStatus ||
       !yearOfStudy ||
@@ -147,7 +144,8 @@ authRouter.post(
       throw new HttpError(400, 'Password and confirm password do not match')
     }
 
-    const universityResult = await pool.query('SELECT id FROM universities WHERE id = $1', [universityAffiliation])
+    const selectedUniversityId = universityAffiliation || universityId
+    const universityResult = await pool.query('SELECT id FROM universities WHERE id = $1', [selectedUniversityId])
     if (universityResult.rowCount === 0) {
       throw new HttpError(400, 'Invalid university selected')
     }
@@ -157,56 +155,37 @@ authRouter.post(
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
+      const normalizedEmail = email.trim().toLowerCase()
+      const insertResult = await client.query(
+        `
+          INSERT INTO students (
+            first_name, last_name, email, address, phone_number, date_of_birth,
+            university_affiliation, major_field_of_study, student_status, year_of_study, password_hash
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          RETURNING first_name, last_name, email, university_affiliation, student_status, year_of_study
+        `,
+        [
+          firstName.trim(),
+          lastName.trim(),
+          normalizedEmail,
+          String(address).trim(),
+          String(phoneNumber).trim(),
+          dateOfBirth || null,
+          selectedUniversityId,
+          majorFieldOfStudy.trim(),
+          studentStatus,
+          yearOfStudy.trim(),
+          passwordHash,
+        ],
+      )
 
-      let createdStudent = null
-      for (let attempt = 0; attempt < 10; attempt += 1) {
-        const generatedId = generateStudentId()
-        try {
-          const insertResult = await client.query(
-            `
-              INSERT INTO students (
-                id, first_name, last_name, email, address, phone_number, date_of_birth,
-                university_affiliation, major_field_of_study, student_status, year_of_study, password_hash
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-              RETURNING id, first_name, last_name, email, university_affiliation, student_status, year_of_study
-            `,
-            [
-              generatedId,
-              firstName.trim(),
-              lastName.trim(),
-              email.trim(),
-              String(address).trim(),
-              String(phoneNumber).trim(),
-              dateOfBirth || null,
-              universityAffiliation,
-              majorFieldOfStudy.trim(),
-              studentStatus,
-              yearOfStudy.trim(),
-              passwordHash,
-            ],
-          )
-
-          const cartId = generatedId.startsWith('S') ? `C${generatedId.slice(1)}` : `C${generatedId}`
-          await client.query('INSERT INTO carts (id, student_id) VALUES ($1, $2)', [cartId, generatedId])
-
-          createdStudent = insertResult.rows[0]
-          break
-        } catch (error) {
-          if (error?.code === '23505' && error?.constraint === 'students_pkey') {
-            continue
-          }
-          throw error
-        }
-      }
-
-      if (!createdStudent) {
-        throw new HttpError(500, 'Failed to generate unique student id')
-      }
+      const cartId = `C${Date.now()}${Math.floor(100 + Math.random() * 900)}`
+      await client.query('INSERT INTO carts (id, student_id) VALUES ($1, $2)', [cartId, normalizedEmail])
 
       await client.query('COMMIT')
       response.status(201).json({
         success: true,
-        data: createdStudent,
+        data: insertResult.rows[0],
         message: 'Student account created successfully',
       })
     } catch (error) {
@@ -258,17 +237,15 @@ authRouter.post(
     }
 
     let user = null
-    let table = ''
 
     if (userRole === 'student') {
       const result = await pool.query(
-        'SELECT id, email, password_hash FROM students WHERE email = $1',
-        [email.trim()],
+        'SELECT email, password_hash FROM students WHERE email = $1',
+        [email.trim().toLowerCase()],
       )
       if (result.rows.length > 0) {
         user = result.rows[0]
         user.role = 'student'
-        table = 'students'
       }
     } else {
       const result = await pool.query(
@@ -277,7 +254,6 @@ authRouter.post(
       )
       if (result.rows.length > 0) {
         user = result.rows[0]
-        table = 'employees'
       }
     }
 
@@ -290,13 +266,13 @@ authRouter.post(
       throw new HttpError(401, 'Invalid password')
     }
 
-    response.cookie('auth_user_id', user.id, getCookieOptions(true))
+    response.cookie('auth_user_id', userRole === 'student' ? user.email : user.id, getCookieOptions(true))
     response.cookie('auth_role', user.role, getCookieOptions(false))
 
     response.json({
       success: true,
       data: {
-        userId: user.id,
+        userId: userRole === 'student' ? user.email : user.id,
         role: user.role,
       },
     })

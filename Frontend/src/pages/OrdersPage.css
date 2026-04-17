@@ -61,7 +61,9 @@
 
 .status-new,
 .status-processing,
-.status-pending {
+.status-pending,
+.status-processed,
+.status-awaiting-shipping {
   color: #1e40af;
   background: #dbeafe;
   border-color: #93c5fd;
@@ -179,6 +181,16 @@
   color: #475569;
   border-top: 1px dashed #e2e8f0;
   padding-top: 8px;
+}
+
+.order-status-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.order-status-actions .input {
+  max-width: 220px;
 }
 
 .orders-page .status-message {

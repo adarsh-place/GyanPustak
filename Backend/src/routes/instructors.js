@@ -10,7 +10,8 @@ instructorsRouter.post(
   '/add',
   requireRoles(['admin', 'superadmin']),
   asyncHandler(async (request, response) => {
-    const { universityId, departmentId = null, firstName, lastName } = request.body
+    const departmentName = (request.body.departmentName ?? request.body.departmentId ?? '').trim()
+    const { universityId, firstName, lastName } = request.body
 
     if (!universityId || !firstName || !lastName) {
       throw new HttpError(400, 'Missing required instructor fields')
@@ -21,10 +22,10 @@ instructorsRouter.post(
       throw new HttpError(404, 'University not found')
     }
 
-    if (departmentId) {
+    if (departmentName) {
       const departmentResult = await pool.query(
-        'SELECT id FROM departments WHERE id = $1 AND university_id = $2',
-        [departmentId, universityId],
+        'SELECT name FROM departments WHERE university_id = $1 AND name = $2',
+        [universityId, departmentName],
       )
 
       if (departmentResult.rowCount === 0) {
@@ -41,11 +42,11 @@ instructorsRouter.post(
         try {
           result = await client.query(
             `
-              INSERT INTO instructors (id, university_id, department_id, first_name, last_name)
+              INSERT INTO instructors (id, university_id, department_name, first_name, last_name)
               VALUES ($1, $2, $3, $4, $5)
               RETURNING *
             `,
-            [generatedId, universityId, departmentId, firstName.trim(), lastName.trim()],
+            [generatedId, universityId, departmentName || null, firstName.trim(), lastName.trim()],
           )
           break
         } catch (error) {
@@ -65,11 +66,11 @@ instructorsRouter.post(
 
     const instructor = result.rows[0]
     const universityNameResult = await pool.query('SELECT name FROM universities WHERE id = $1', [instructor.university_id])
-    const departmentNameResult = instructor.department_id
-      ? await pool.query('SELECT name FROM departments WHERE id = $1', [instructor.department_id])
+    const departmentNameResult = instructor.department_name
+      ? await pool.query('SELECT name FROM departments WHERE university_id = $1 AND name = $2', [instructor.university_id, instructor.department_name])
       : null
 
-    const departmentName = departmentNameResult?.rows?.[0]?.name || ''
+    const resolvedDepartmentName = departmentNameResult?.rows?.[0]?.name || ''
 
     response.status(201).json({
       success: true,
@@ -78,9 +79,8 @@ instructorsRouter.post(
         first_name: instructor.first_name,
         last_name: instructor.last_name,
         university_id: instructor.university_id,
-        department_id: instructor.department_id,
         university_name: universityNameResult.rows[0]?.name || '',
-        department_name: departmentName,
+        department_name: resolvedDepartmentName,
       },
     })
   }),
@@ -95,12 +95,12 @@ instructorsRouter.get(
                i.first_name,
                i.last_name,
                i.university_id,
-               i.department_id,
+               i.department_name,
                u.name AS university_name,
                d.name AS department_name
         FROM instructors i
         JOIN universities u ON u.id = i.university_id
-        LEFT JOIN departments d ON d.id = i.department_id
+        LEFT JOIN departments d ON d.university_id = i.university_id AND d.name = i.department_name
         ORDER BY i.first_name ASC, i.last_name ASC
       `,
     )
@@ -118,12 +118,12 @@ instructorsRouter.get(
                i.first_name,
                i.last_name,
                i.university_id,
-               i.department_id,
+               i.department_name,
                u.name AS university_name,
                d.name AS department_name
         FROM instructors i
         JOIN universities u ON u.id = i.university_id
-        LEFT JOIN departments d ON d.id = i.department_id
+        LEFT JOIN departments d ON d.university_id = i.university_id AND d.name = i.department_name
         WHERE i.id = $1
       `,
       [request.params.id],

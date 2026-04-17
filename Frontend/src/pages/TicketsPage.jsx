@@ -6,6 +6,7 @@ import './TicketsPage.css'
 function TicketsPage() {
   const {
     activeRole,
+    authUserId,
     tickets,
     student,
     reloadTickets,
@@ -71,7 +72,7 @@ function TicketsPage() {
         id: `T${Date.now()}`,
         category: formState.category,
         createdByType: activeRole,
-        createdById: activeRole === 'student' ? student.id : 'E3001',
+        createdById: activeRole === 'student' ? student.email : authUserId,
         title: formState.title.trim(),
         problemDescription: formState.problemDescription.trim(),
         status: 'new',

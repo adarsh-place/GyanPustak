@@ -25,13 +25,13 @@ function CartPage() {
     return /^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry.trim())
   }
 
-  const handleRemove = async (bookId) => {
+  const handleRemove = async (bookIsbn) => {
     setActionMessage('Removing from cart...')
     setActionType('info')
     setIsActionLoading(true)
 
     try {
-      await apiClient.removeCartItem(bookId)
+      await apiClient.removeCartItem(bookIsbn)
       await reloadCart()
       setActionMessage('Item removed successfully')
       setActionType('success')
@@ -78,7 +78,7 @@ function CartPage() {
 
     try {
       await apiClient.createOrderFromCart({
-        studentId: student.id,
+        studentId: student.email,
         shippingType,
         creditCardNumber: paymentDetails.creditCardNumber.replace(/\s+/g, ''),
         creditCardExpirationDate: paymentDetails.creditCardExpirationDate.trim(),
@@ -135,6 +135,8 @@ function CartPage() {
         </div>
       </article>
 
+      {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
+
       {cartBooks.length === 0 ? (
         <article className="card">
           <p>Your cart is currently empty.</p>
@@ -143,14 +145,14 @@ function CartPage() {
         <div className="cart-layout">
           <div className="cart-items-grid">
             {cartBooks.map((book) => (
-              <article key={book.id} className="card cart-book-card">
+              <article key={book.isbn} className="card cart-book-card">
                 <div className="card-header">
                   <h3>{book.title}</h3>
                   {book.purchaseOption === 'buy' ? <span className="badge">₹{book.price}</span> : null}
                 </div>
                 <p className="book-meta">{book.format} • {book.type}</p>
                 <p className="book-option">Option: {book.purchaseOption || 'buy'}</p>
-                <button className="button button-secondary" onClick={() => handleRemove(book.id)} disabled={isActionLoading}>
+                <button className="button button-secondary" onClick={() => handleRemove(book.isbn)} disabled={isActionLoading}>
                   Remove
                 </button>
               </article>
@@ -228,7 +230,6 @@ function CartPage() {
         </div>
       )}
 
-      {actionMessage && <article className={`status-message ${actionType}`}>{actionMessage}</article>}
     </section>
   )
 }

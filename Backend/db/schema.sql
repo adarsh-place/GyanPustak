@@ -1,10 +1,9 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS students (
-  id TEXT PRIMARY KEY,
   first_name TEXT NOT NULL,
   last_name TEXT NOT NULL,
-  email TEXT NOT NULL UNIQUE,
+  email TEXT PRIMARY KEY,
   address TEXT,
   phone_number TEXT,
   date_of_birth DATE,
@@ -46,18 +45,20 @@ CREATE TABLE IF NOT EXISTS universities (
 );
 
 CREATE TABLE IF NOT EXISTS departments (
-  id TEXT PRIMARY KEY,
   university_id TEXT NOT NULL REFERENCES universities(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
-  UNIQUE (university_id, name)
+  PRIMARY KEY (university_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS instructors (
   id TEXT PRIMARY KEY,
   university_id TEXT NOT NULL REFERENCES universities(id) ON DELETE CASCADE,
-  department_id TEXT REFERENCES departments(id) ON DELETE SET NULL,
+  department_name TEXT,
   first_name TEXT NOT NULL,
-  last_name TEXT NOT NULL
+  last_name TEXT NOT NULL,
+  FOREIGN KEY (university_id, department_name)
+    REFERENCES departments(university_id, name)
+    ON DELETE RESTRICT
 );
 
 CREATE TABLE IF NOT EXISTS courses (
@@ -72,8 +73,12 @@ CREATE TABLE IF NOT EXISTS courses (
 
 CREATE TABLE IF NOT EXISTS course_departments (
   course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  department_id TEXT NOT NULL REFERENCES departments(id) ON DELETE CASCADE,
-  PRIMARY KEY (course_id, department_id)
+  university_id TEXT NOT NULL REFERENCES universities(id) ON DELETE CASCADE,
+  department_name TEXT NOT NULL,
+  PRIMARY KEY (course_id, university_id, department_name),
+  FOREIGN KEY (university_id, department_name)
+    REFERENCES departments(university_id, name)
+    ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS course_instructors (
@@ -83,13 +88,12 @@ CREATE TABLE IF NOT EXISTS course_instructors (
 );
 
 CREATE TABLE IF NOT EXISTS books (
-  id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('new', 'used')),
   purchase_option TEXT[] NOT NULL DEFAULT ARRAY['buy']::TEXT[],
   price NUMERIC(12,2) NOT NULL CHECK (price >= 0),
   quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
-  isbn TEXT NOT NULL UNIQUE,
+  isbn TEXT PRIMARY KEY,
   publisher TEXT NOT NULL,
   publication_date DATE NOT NULL,
   edition_number TEXT NOT NULL,
@@ -103,29 +107,29 @@ CREATE TABLE IF NOT EXISTS books (
 );
 
 CREATE TABLE IF NOT EXISTS book_authors (
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
   author_name TEXT NOT NULL,
   author_order INTEGER NOT NULL DEFAULT 1,
   PRIMARY KEY (book_id, author_name)
 );
 
 CREATE TABLE IF NOT EXISTS book_keywords (
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
   keyword TEXT NOT NULL,
   PRIMARY KEY (book_id, keyword)
 );
 
 CREATE TABLE IF NOT EXISTS course_books (
   course_id TEXT NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
   relation TEXT NOT NULL CHECK (relation IN ('required', 'recommended')),
   PRIMARY KEY (course_id, book_id)
 );
 
 CREATE TABLE IF NOT EXISTS book_reviews (
   id TEXT PRIMARY KEY,
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
-  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(email) ON DELETE CASCADE,
   rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
   review_text TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -160,14 +164,14 @@ CREATE TABLE IF NOT EXISTS ticket_status_history (
 
 CREATE TABLE IF NOT EXISTS carts (
   id TEXT PRIMARY KEY,
-  student_id TEXT NOT NULL UNIQUE REFERENCES students(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL UNIQUE REFERENCES students(email) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS cart_items (
   cart_id TEXT NOT NULL REFERENCES carts(id) ON DELETE CASCADE,
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
   purchase_option TEXT NOT NULL DEFAULT 'buy' CHECK (purchase_option IN ('buy', 'rent')),
   PRIMARY KEY (cart_id, book_id)
@@ -175,7 +179,7 @@ CREATE TABLE IF NOT EXISTS cart_items (
 
 CREATE TABLE IF NOT EXISTS orders (
   id TEXT PRIMARY KEY,
-  student_id TEXT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  student_id TEXT NOT NULL REFERENCES students(email) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   fulfilled_at TIMESTAMPTZ,
   shipping_type TEXT NOT NULL CHECK (shipping_type IN ('standard', '2-day', '1-day')),
@@ -189,7 +193,7 @@ CREATE TABLE IF NOT EXISTS orders (
 
 CREATE TABLE IF NOT EXISTS order_items (
   order_id TEXT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-  book_id TEXT NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  book_id TEXT NOT NULL REFERENCES books(isbn) ON DELETE CASCADE,
   quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
   PRIMARY KEY (order_id, book_id)
 );
