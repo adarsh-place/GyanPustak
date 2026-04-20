@@ -53,6 +53,7 @@ function AppContent() {
     if (link.studentOnly && activeRole !== 'student') return false
     if (link.adminOnly && activeRole !== 'admin' && activeRole !== 'superadmin') return false
     if (link.supportBlocked && activeRole === 'support') return false
+    if (link.to === '/orders' && ['admin', 'superadmin'].includes(activeRole)) return false
     if (link.staffOnly && !['support', 'admin', 'superadmin'].includes(activeRole)) return false
     return true
   })

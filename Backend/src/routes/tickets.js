@@ -187,10 +187,15 @@ ticketsRouter.patch(
       throw new HttpError(400, 'Missing required status fields')
     }
 
+    const authRole = request.auth?.role
+    if (authRole === 'superadmin') {
+      throw new HttpError(403, 'Superadmin is not allowed to update ticket status')
+    }
+
     const client = await pool.connect()
     try {
       await client.query('BEGIN')
-      const isStudent = request.auth?.role === 'student'
+      const isStudent = authRole === 'student'
       const updateResult = isStudent
         ? await client.query(
             `

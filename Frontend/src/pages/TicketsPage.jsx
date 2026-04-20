@@ -303,7 +303,7 @@ function TicketsPage() {
                   />
                 )}
 
-                {adminCanProgress && (
+                {adminCanProgress && activeRole !== 'superadmin' && (
                   <button className="button" onClick={() => progressTicket(ticket.id)} disabled={isActionLoading}>
                     {ticket.status === 'assigned' ? 'Start Processing' : 'Mark Completed'}
                   </button>

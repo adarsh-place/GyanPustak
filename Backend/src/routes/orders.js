@@ -216,7 +216,7 @@ ordersRouter.patch(
 
 ordersRouter.patch(
   '/:orderId/status',
-  requireRoles(['support', 'admin', 'superadmin']),
+  requireRoles(['support']),
   asyncHandler(async (request, response) => {
     const { status } = request.body
 
