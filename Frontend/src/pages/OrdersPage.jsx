@@ -91,6 +91,10 @@ function OrdersPage() {
                   <span className="meta-label">Shipping</span>
                   <span className="meta-value">{order.shippingType}</span>
                 </p>
+                <p>
+                  <span className="meta-label">Total</span>
+                  <span className="meta-value">₹{order.totalAmount?.toFixed(2) ?? '0.00'}</span>
+                </p>
               </div>
 
               <div className="order-books">

@@ -187,6 +187,7 @@ CREATE TABLE IF NOT EXISTS orders (
   credit_card_expiration_date TEXT NOT NULL,
   credit_card_holder_name TEXT NOT NULL,
   credit_card_type TEXT NOT NULL,
+  total_amount NUMERIC(12,2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
   status TEXT NOT NULL CHECK (status IN ('new', 'processed', 'awaiting shipping', 'shipped', 'canceled')),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

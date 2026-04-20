@@ -153,6 +153,7 @@ function mapOrder(orderRow) {
       bookId: item.bookId,
       title: item.title,
       quantity: Number(item.quantity),
+      price: Number(item.price),
     })),
     shippingType: orderRow.shippingType,
     cardNumber: orderRow.creditCardNumber,
@@ -160,6 +161,7 @@ function mapOrder(orderRow) {
     cardHolderName: orderRow.creditCardHolderName,
     cardType: orderRow.creditCardType,
     status: orderRow.status,
+    totalAmount: Number(orderRow.totalAmount),
   }
 }
 

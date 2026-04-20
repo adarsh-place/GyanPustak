@@ -22,7 +22,7 @@ function resolveStudentId(request, requestedStudentId) {
 async function buildOrder(orderRow) {
   const itemsResult = await pool.query(
     `
-      SELECT oi.book_id, oi.quantity, b.title
+      SELECT oi.book_id, oi.quantity, b.title, b.price
       FROM order_items oi
       JOIN books b ON b.isbn = oi.book_id
       WHERE oi.order_id = $1
@@ -30,6 +30,14 @@ async function buildOrder(orderRow) {
     `,
     [orderRow.id],
   )
+
+  const items = itemsResult.rows.map((item) => ({
+    bookId: item.book_id,
+    quantity: item.quantity,
+    title: item.title,
+    price: Number(item.price),
+  }))
+  const totalAmount = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return {
     id: orderRow.id,
@@ -42,11 +50,8 @@ async function buildOrder(orderRow) {
     creditCardHolderName: orderRow.credit_card_holder_name,
     creditCardType: orderRow.credit_card_type,
     status: orderRow.status,
-    items: itemsResult.rows.map((item) => ({
-      bookId: item.book_id,
-      quantity: item.quantity,
-      title: item.title,
-    })),
+    totalAmount: Number(orderRow.total_amount ?? totalAmount),
+    items,
   }
 }
 
@@ -136,13 +141,21 @@ ordersRouter.post(
         }
       }
 
+      // Calculate total amount
+      let totalAmount = 0
+      for (const item of itemsResult.rows) {
+        const bookResult = await client.query('SELECT price FROM books WHERE isbn = $1', [item.book_id])
+        const price = Number(bookResult.rows[0]?.price || 0)
+        totalAmount += price * Number(item.quantity)
+      }
+
       const orderId = `O${9000 + Date.now().toString().slice(-4)}`
       const orderResult = await client.query(
         `
           INSERT INTO orders (
             id, student_id, shipping_type, credit_card_number,
-            credit_card_expiration_date, credit_card_holder_name, credit_card_type, status
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            credit_card_expiration_date, credit_card_holder_name, credit_card_type, total_amount, status
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
           RETURNING *
         `,
         [
@@ -153,6 +166,7 @@ ordersRouter.post(
           creditCardExpirationDate,
           creditCardHolderName,
           creditCardType,
+          totalAmount,
           status,
         ],
       )
