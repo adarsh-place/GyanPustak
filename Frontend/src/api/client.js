@@ -68,6 +68,12 @@ export const apiClient = {
       body: JSON.stringify(payload),
     })
   },
+  increaseBookQuantity(isbn, amount) {
+    return request(`/books/${isbn}/increase-quantity`, {
+      method: 'PATCH',
+      body: JSON.stringify({ amount }),
+    })
+  },
   getUniversities() {
     return request('/universities')
   },

@@ -6,7 +6,7 @@ import './BookDetailsPage.css'
 
 function BookDetailsPage() {
   const { id: bookIsbn } = useParams()
-  const { books, activeRole, cartBooks, student, reloadCart } = useGyanPustak()
+  const { books, activeRole, cartBooks, student, reloadCart, reloadBooks } = useGyanPustak()
 
   const [book, setBook] = useState(() => books.find((item) => item.isbn === bookIsbn) || null)
   const [isLoadingBook, setIsLoadingBook] = useState(false)
@@ -339,6 +339,53 @@ function BookDetailsPage() {
             ) : activeRole === 'student' ? (
               <span className="badge">Already in cart</span>
             ) : null}
+
+            {(activeRole === 'admin' || activeRole === 'superadmin') && (
+              <form
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  const form = e.target;
+                  const amount = Number(form.elements.quantity.value);
+                  if (!amount || amount <= 0) {
+                    setActionMessage('Enter a positive quantity');
+                    setActionType('error');
+                    setTimeout(() => setActionMessage(''), 1800);
+                    return;
+                  }
+                  setIsActionLoading(true);
+                  setActionMessage('Increasing quantity...');
+                  setActionType('info');
+                  try {
+                    const response = await apiClient.increaseBookQuantity(book.isbn, amount);
+                    setBook(response.data);
+                    if (typeof reloadBooks === 'function') {
+                      reloadBooks();
+                    }
+                    setActionMessage('Quantity increased successfully');
+                    setActionType('success');
+                  } catch (error) {
+                    setActionMessage(error instanceof Error ? error.message : 'Failed to increase quantity');
+                    setActionType('error');
+                  } finally {
+                    setIsActionLoading(false);
+                    setTimeout(() => setActionMessage(''), 1800);
+                  }
+                }}
+              >
+                <input
+                  type="number"
+                  name="quantity"
+                  min="1"
+                  placeholder="Increase by..."
+                  disabled={isActionLoading}
+                  required
+                />
+                <button type="submit" className="button" disabled={isActionLoading}>
+                  {isActionLoading ? 'Updating...' : 'Increase Quantity'}
+                </button>
+              </form>
+            )}
           </div>
         </div>
       </article>

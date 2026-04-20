@@ -119,6 +119,15 @@ booksRouter.post(
 
     const client = await pool.connect()
     try {
+      // Check if a book with the same isbn and type already exists
+      const existsResult = await client.query(
+        'SELECT 1 FROM books WHERE isbn = $1 AND type = $2',
+        [isbn, type]
+      )
+      if (existsResult.rowCount > 0) {
+        throw new HttpError(409, 'Book with this ISBN and type already exists')
+      }
+
       await client.query('BEGIN')
       const bookResult = await client.query(
         `
@@ -167,4 +176,36 @@ booksRouter.post(
       client.release()
     }
   }),
+)
+
+booksRouter.patch(
+  '/:isbn/increase-quantity',
+  requireRoles(['admin', 'superadmin']),
+  asyncHandler(async (request, response) => {
+    const { amount } = request.body
+    const { isbn } = request.params
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+      throw new HttpError(400, 'Amount must be a positive number')
+    }
+
+    const client = await pool.connect()
+    try {
+      await client.query('BEGIN')
+      const updateResult = await client.query(
+        'UPDATE books SET quantity = quantity + $1, updated_at = NOW() WHERE isbn = $2 RETURNING *',
+        [amount, isbn]
+      )
+      if (updateResult.rowCount === 0) {
+        throw new HttpError(404, 'Book not found')
+      }
+      await client.query('COMMIT')
+      const [book] = await enrichBooks(updateResult.rows)
+      response.json({ success: true, data: book })
+    } catch (error) {
+      await client.query('ROLLBACK')
+      throw error
+    } finally {
+      client.release()
+    }
+  })
 )
