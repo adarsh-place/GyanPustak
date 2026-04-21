@@ -33,7 +33,7 @@ The platform models a university textbook ecosystem where:
 - Node.js (ES Modules)
 - Express 5
 - PostgreSQL with pg driver
-- Cookie-based auth session
+- JWT-based authentication
 - bcryptjs for password hashing
 
 ### Database
@@ -45,7 +45,7 @@ The platform models a university textbook ecosystem where:
 
 Frontend (React SPA)
 
-- Authenticates through /api/auth/login and stores role + user id in cookies.
+- Authenticates through /api/auth/login and stores JWT in localStorage.
 - Loads shared application data through a centralized context provider.
 - Uses role-based route guards and conditional UI actions.
 - Talks to backend through a small API client module.
@@ -53,7 +53,7 @@ Frontend (React SPA)
 Backend (Express API)
 
 - Exposes /api routes and enforces auth/role constraints.
-- Validates role session from cookies on each protected request.
+- Validates JWT on each protected request.
 - Encapsulates each domain in dedicated route modules.
 - Uses SQL transactions for multi-step operations (course creation, order from cart, etc.).
 
@@ -66,7 +66,7 @@ Database (PostgreSQL)
 
 - Identity and access control:
   - Roles: student, support, admin, superadmin
-  - Cookie-based auth with request-level role checks
+  - JWT-based auth with request-level role checks
 - Academic hierarchy:
   - Universities -> Departments -> Instructors -> Courses
 - Catalog:
@@ -115,7 +115,7 @@ Superadmin
 
 1. User submits email, password, role on login page.
 2. Backend validates user credentials from students or employees table.
-3. Backend sets auth_user_id and auth_role cookies.
+3. Backend issues a JWT containing user id and role.
 4. Frontend context loads all relevant datasets.
 
 ### Student signup flow
@@ -220,7 +220,7 @@ Frontend optional variables:
 ## 11. Security and Validation Notes
 
 - Backend is the source of truth for authorization.
-- Cookies identify authenticated role and user id.
+- JWT identifies authenticated role and user id.
 - DB constraints enforce key business invariants (status enums, uniqueness, FKs).
 - Frontend adds UX validation but should be treated as convenience only.
 

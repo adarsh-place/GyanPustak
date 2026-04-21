@@ -3,21 +3,11 @@ import bcrypt from 'bcryptjs'
 import { pool } from '../db/pool.js'
 import { asyncHandler } from '../utils/asyncHandler.js'
 import { HttpError } from '../utils/httpError.js'
+import { generateToken } from '../utils/jwt.js'
 
 export const authRouter = Router()
-const LOGIN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
+
 const VALID_ROLES = new Set(['student', 'support', 'admin', 'superadmin'])
-
-function getCookieOptions(httpOnly) {
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  return {
-    httpOnly,
-    secure: isProduction,
-    sameSite: isProduction ? 'None' : 'Lax',
-    maxAge: LOGIN_MAX_AGE_MS,
-  }
-}
 
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -29,65 +19,6 @@ function isValidPhone(phone) {
   const plusFormat = /^\+91\d{10}$/
   const plainFormat = /^\d{10}$/
   return plusFormat.test(cleaned) || plainFormat.test(cleaned)
-}
-
-function clearAuthCookies(response) {
-  response.clearCookie('auth_user_id', getCookieOptions(true))
-  response.clearCookie('auth_role', getCookieOptions(false))
-}
-
-async function resolveAuthSession(request, response) {
-  const userId = request.cookies.auth_user_id
-  const role = request.cookies.auth_role
-
-  if (!userId || !role) {
-    return {
-      authenticated: false,
-      userId: null,
-      role: null,
-    }
-  }
-
-  const normalizedRole = String(role).toLowerCase().trim()
-  if (!VALID_ROLES.has(normalizedRole)) {
-    clearAuthCookies(response)
-    return {
-      authenticated: false,
-      userId: null,
-      role: null,
-    }
-  }
-
-  if (normalizedRole === 'student') {
-    const result = await pool.query('SELECT email FROM students WHERE email = $1', [userId])
-    if (result.rowCount === 0) {
-      clearAuthCookies(response)
-      return {
-        authenticated: false,
-        userId: null,
-        role: null,
-      }
-    }
-  } else {
-    const result = await pool.query('SELECT id FROM employees WHERE id = $1 AND role = $2', [
-      userId,
-      normalizedRole,
-    ])
-    if (result.rowCount === 0) {
-      clearAuthCookies(response)
-      return {
-        authenticated: false,
-        userId: null,
-        role: null,
-      }
-    }
-  }
-
-  return {
-    authenticated: true,
-    userId,
-    role: normalizedRole,
-  }
 }
 
 authRouter.post(
@@ -237,23 +168,32 @@ authRouter.post(
     }
 
     let user = null
+    let userId = null
+    let name = null
+    let emailOut = null
 
     if (userRole === 'student') {
       const result = await pool.query(
-        'SELECT email, password_hash FROM students WHERE email = $1',
+        'SELECT email, password_hash, first_name, last_name FROM students WHERE email = $1',
         [email.trim().toLowerCase()],
       )
       if (result.rows.length > 0) {
         user = result.rows[0]
         user.role = 'student'
+        userId = user.email
+        name = (user.first_name ? user.first_name : '') + (user.last_name ? ' ' + user.last_name : '')
+        emailOut = user.email
       }
     } else {
       const result = await pool.query(
-        'SELECT id, email, password_hash, role FROM employees WHERE email = $1 AND role = ANY($2)',
+        'SELECT id, email, password_hash, role, first_name, last_name FROM employees WHERE email = $1 AND role = ANY($2)',
         [email.trim(), [userRole]],
       )
       if (result.rows.length > 0) {
         user = result.rows[0]
+        userId = user.id
+        name = (user.first_name ? user.first_name : '') + (user.last_name ? ' ' + user.last_name : '')
+        emailOut = user.email
       }
     }
 
@@ -266,13 +206,17 @@ authRouter.post(
       throw new HttpError(401, 'Invalid password')
     }
 
-    response.cookie('auth_user_id', userRole === 'student' ? user.email : user.id, getCookieOptions(true))
-    response.cookie('auth_role', user.role, getCookieOptions(false))
+    const token = generateToken({
+      userId,
+      role: user.role,
+    })
 
     response.json({
-      success: true,
-      data: {
-        userId: userRole === 'student' ? user.email : user.id,
+      token,
+      user: {
+        id: userId,
+        name: name?.trim() || emailOut,
+        email: emailOut,
         role: user.role,
       },
     })
@@ -282,8 +226,6 @@ authRouter.post(
 authRouter.post(
   '/logout',
   asyncHandler(async (request, response) => {
-    response.clearCookie('auth_user_id', getCookieOptions(true))
-    response.clearCookie('auth_role', getCookieOptions(false))
 
     response.json({
       success: true,

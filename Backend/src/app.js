@@ -1,7 +1,6 @@
 import cors from 'cors'
 import express from 'express'
 import helmet from 'helmet'
-import cookieParser from 'cookie-parser'
 import morgan from 'morgan'
 import { apiRouter } from './routes/index.js'
 import { errorHandler } from './middleware/errorHandler.js'
@@ -34,7 +33,6 @@ app.use(
   }),
 )
 app.use(express.json())
-app.use(cookieParser())
 app.use(morgan('dev'))
 
 app.get('/', (request, response) => {

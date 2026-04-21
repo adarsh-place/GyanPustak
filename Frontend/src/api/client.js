@@ -5,11 +5,17 @@ function resolveBaseUrl() {
   return configuredBaseUrl.endsWith('/') ? configuredBaseUrl.slice(0, -1) : configuredBaseUrl
 }
 
+function getToken() {
+  return localStorage.getItem('jwt_token')
+}
+
 async function request(path, options = {}) {
+  const token = getToken()
   const response = await fetch(`${resolveBaseUrl()}${path}`, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
@@ -47,9 +53,6 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
-  },
-  getSession() {
-    return request('/auth/session')
   },
   logout() {
     return request('/auth/logout', {

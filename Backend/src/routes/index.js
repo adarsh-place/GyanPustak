@@ -11,13 +11,13 @@ import { reviewsRouter } from './reviews.js'
 import { studentsRouter } from './students.js'
 import { ticketsRouter } from './tickets.js'
 import { universitiesRouter } from './universities.js'
-import { requireAuth } from '../middleware/authGuard.js'
+import { jwtAuth } from '../middleware/jwtAuth.js'
 
 export const apiRouter = Router()
 
 apiRouter.use('/auth', authRouter)
 apiRouter.use('/health', healthRouter)
-apiRouter.use(requireAuth)
+apiRouter.use(jwtAuth)
 apiRouter.use('/books', booksRouter)
 apiRouter.use('/universities', universitiesRouter)
 apiRouter.use('/instructors', instructorsRouter)

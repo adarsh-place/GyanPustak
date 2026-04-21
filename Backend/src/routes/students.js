@@ -6,18 +6,6 @@ import { HttpError } from '../utils/httpError.js'
 import { requireRoles } from '../middleware/authGuard.js'
 
 export const studentsRouter = Router()
-const LOGIN_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000
-
-function getCookieOptions(httpOnly) {
-  const isProduction = process.env.NODE_ENV === 'production'
-
-  return {
-    httpOnly,
-    secure: isProduction,
-    sameSite: isProduction ? 'None' : 'Lax',
-    maxAge: LOGIN_MAX_AGE_MS,
-  }
-}
 
 function isValidEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/

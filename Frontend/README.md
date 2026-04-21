@@ -55,7 +55,7 @@ File: src/context/GyanPustakContext.jsx
 
 Responsibilities:
 
-- Reads auth role from cookies
+- Reads auth role from JWT in localStorage
 - Maintains all core datasets:
   - books, universities, courses, instructors
   - students, employees
@@ -221,7 +221,7 @@ Admin and superadmin features:
 Vite config:
 
 - Dev proxy forwards /api to http://localhost:5000
-- This enables cookie/session flows without changing API paths in code
+- This enables JWT-based authentication flows without changing API paths in code
 
 ## 9. Frontend Data Model Highlights
 

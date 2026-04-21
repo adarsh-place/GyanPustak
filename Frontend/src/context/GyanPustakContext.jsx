@@ -201,48 +201,27 @@ export function GyanPustakProvider({ children }) {
   const primaryStudent = students[0];
 
   useEffect(() => {
-    let isMounted = true
-
-    const restoreSession = async () => {
-      setIsCheckingAuth(true)
-
+    // Restore authentication state from JWT in localStorage
+    setIsCheckingAuth(true)
+    const token = localStorage.getItem('jwt_token')
+    if (token) {
       try {
-        const response = await apiClient.getSession()
-        const session = response?.data
-
-        if (!isMounted) {
-          return
-        }
-
-        if (session?.authenticated) {
-          setIsAuthenticated(true)
-          setActiveRole(session.role || 'student')
-          setAuthUserId(session.userId || '')
-        } else {
-          setIsAuthenticated(false)
-          setActiveRole('student')
-          setAuthUserId('')
-        }
-      } catch (error) {
-        if (!isMounted) {
-          return
-        }
-
+        // Decode JWT payload (base64 decode, no signature check in frontend)
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setIsAuthenticated(true)
+        setActiveRole(payload.role || 'student')
+        setAuthUserId(payload.userId || '')
+      } catch (e) {
         setIsAuthenticated(false)
         setActiveRole('student')
         setAuthUserId('')
-      } finally {
-        if (isMounted) {
-          setIsCheckingAuth(false)
-        }
       }
+    } else {
+      setIsAuthenticated(false)
+      setActiveRole('student')
+      setAuthUserId('')
     }
-
-    restoreSession()
-
-    return () => {
-      isMounted = false
-    }
+    setIsCheckingAuth(false)
   }, [])
 
   const loadData = useCallback(async () => {
@@ -311,8 +290,11 @@ export function GyanPustakProvider({ children }) {
 
   const loginAsRole = useCallback(async (credentials) => {
     const response = await apiClient.login(credentials)
-    setActiveRole(response?.data?.role || credentials.role)
-    setAuthUserId(response?.data?.userId || '')
+    if (response?.token) {
+      localStorage.setItem('jwt_token', response.token)
+    }
+    setActiveRole(response?.user?.role || '')
+    setAuthUserId(response?.user?.id || '')
     setIsAuthenticated(true)
     setIsCheckingAuth(false)
   }, [])
@@ -323,6 +305,7 @@ export function GyanPustakProvider({ children }) {
     } catch (error) {
       console.error('Logout failed:', error)
     } finally {
+      localStorage.removeItem('jwt_token')
       setIsAuthenticated(false)
       setActiveRole('student')
       setAuthUserId('')

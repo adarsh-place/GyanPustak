@@ -8,7 +8,7 @@ This README documents backend architecture, startup flow, schema integration, mi
 - Express 5
 - PostgreSQL through pg Pool
 - bcryptjs for password hashing
-- cookie-parser for cookie-based session access
+- jsonwebtoken for JWT-based authentication
 - helmet, cors, morgan for baseline HTTP security and logging
 
 Package scripts:
@@ -61,7 +61,7 @@ DB connection is defined in src/db/pool.js using DATABASE_URL.
 
 File: src/middleware/authGuard.js
 
-- Reads auth_user_id and auth_role cookies
+- Reads and verifies JWT from Authorization header
 - Validates role against allowed set
 - Verifies user exists in students or employees table
 - Adds request.auth = { userId, role }
@@ -129,9 +129,9 @@ File: src/routes/auth.js
     - student -> students table
     - support/admin/superadmin -> employees table
   - Verifies bcrypt password hash
-  - Sets auth cookies for user id and role
+  - Issues JWT for user id and role
 - POST /api/auth/logout
-  - Clears auth cookies
+  - Client removes JWT from localStorage on logout
 
 ### 8.2 Health
 
@@ -367,7 +367,7 @@ Includes:
 
 Current behavior:
 
-- Cookie session role checks on every protected route
+- JWT role checks on every protected route
 - Role-based middleware for sensitive actions
 - Input validation exists in route handlers
 
@@ -375,7 +375,7 @@ Important production considerations:
 
 - IDs are generated in code using Date.now-based patterns in many routes
 - Payment card details are persisted as plain fields in orders table
-- No refresh token or JWT strategy; session is cookie and DB-backed identity check
+- No refresh token; JWT is used for stateless authentication
 
 ## 12. Running Backend Locally
 
